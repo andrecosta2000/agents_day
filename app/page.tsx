@@ -1,5 +1,6 @@
+import { SUPPORTED_CITIES, type SupportedCity } from "@/lib/cities";
 import { getProduceDemand, getSites } from "@/lib/api";
-import { HomePage, SUPPORTED_CITIES, type SupportedCity } from "./components/HomePage";
+import { HomePage } from "./components/HomePage";
 
 function resolveCity(raw: string | undefined): SupportedCity {
 	if (!raw) return "Lisbon";

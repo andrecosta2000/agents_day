@@ -1,6 +1,6 @@
 import type { SiteReport } from "@/types/interfaces";
 
-const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"] as const;
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
 type Props = {
 	report: SiteReport;
@@ -58,7 +58,7 @@ export function SiteDetailPanel({ report }: Props) {
 						{climate.monthlyAvgTempC.map((t, i) => {
 							const h = Math.min(100, Math.max(8, ((t + 5) / 35) * 100));
 							return (
-								<div key={MONTHS[i]} className="flex flex-1 flex-col items-center gap-1">
+								<div key={i} className="flex flex-1 flex-col items-center gap-1">
 									<div
 										className="w-full max-w-[10px] rounded-t bg-linear-to-t from-emerald-900 to-emerald-500"
 										style={{ height: `${h}%` }}

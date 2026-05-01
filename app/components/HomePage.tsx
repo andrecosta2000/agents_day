@@ -3,31 +3,14 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
+import { SUPPORTED_CITIES } from "@/lib/cities";
+import type { SupportedCity } from "@/lib/cities";
 import type { Demand, Site } from "@/types/interfaces";
 import { AppShell } from "./AppShell";
 import { CitySelector } from "./CitySelector";
 import { DemandSnippet } from "./DemandSnippet";
 
-// Mirrors Member 1's getSupportedCities() — all 15 cities
-export const SUPPORTED_CITIES = [
-	"Amsterdam",
-	"Barcelona",
-	"Berlin",
-	"Boston",
-	"Chicago",
-	"Dubai",
-	"Lisbon",
-	"London",
-	"Los Angeles",
-	"Madrid",
-	"New York",
-	"Paris",
-	"Porto",
-	"San Francisco",
-	"Seattle",
-] as const;
-
-export type SupportedCity = (typeof SUPPORTED_CITIES)[number];
+export type { SupportedCity };
 
 const SiteMap = dynamic(() => import("./SiteMap").then((m) => m.SiteMap), {
 	ssr: false,
