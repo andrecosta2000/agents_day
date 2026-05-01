@@ -1,214 +1,100 @@
-/**
- * Offline-capable Event Queue
- *
- * PagerDuty events are written to a local JSON file before being sent so
- * that no alert is lost when the network is unavailable.  A sync loop
- * (started lazily on first enqueue) retries pending events every 30 s.
- *
- * Queue file: /tmp/urbanfarm-queue.json
- */
+import fs from "node:fs";
 
-import fs from "node:fs/promises";
-import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { outboundQueueFile, urbanfarmDir } from "./paths";
+import { sendResolve, sendTrigger, type TriggerPayload } from "./pagerduty";
 
-const QUEUE_PATH =
-  process.env.EVENT_QUEUE_PATH ?? "/tmp/urbanfarm-queue.json";
+export type QueuedEvent =
+	| { kind: "trigger"; payload: TriggerPayload }
+	| { kind: "resolve"; dedupKey: string };
 
-const SYNC_INTERVAL_MS = 30_000;
-const PAGERDUTY_EVENTS_URL = "https://events.pagerduty.com/v2/enqueue";
-
-// ── Queue entry ──────────────────────────────────────────────────────────
-
-export type QueuedEventStatus = "pending" | "sent" | "failed";
-
-export interface QueuedEvent {
-  id: string;
-  payload: PagerDutyEventPayload;
-  enqueuedAt: string;
-  status: QueuedEventStatus;
-  attempts: number;
-  lastAttemptAt?: string;
-  error?: string;
+interface QueueFile {
+	events: QueuedEvent[];
 }
 
-// ── PagerDuty Events API v2 payload shape ─────────────────────────────────
-
-export interface PagerDutyEventPayload {
-  routing_key: string;
-  event_action: "trigger" | "acknowledge" | "resolve";
-  dedup_key?: string;
-  payload?: {
-    summary: string;
-    severity: "info" | "warning" | "error" | "critical";
-    source: string;
-    timestamp?: string;
-    custom_details?: Record<string, unknown>;
-  };
-  links?: Array<{ href: string; text: string }>;
-  images?: Array<{ src: string; href?: string; alt?: string }>;
-  client?: string;
-  client_url?: string;
+function ensureDir(): void {
+	fs.mkdirSync(urbanfarmDir(), { recursive: true });
 }
 
-// ── In-memory queue (mirrors the file) ───────────────────────────────────
-
-let queue: QueuedEvent[] = [];
-let queueLoaded = false;
-let syncTimer: ReturnType<typeof setInterval> | null = null;
-
-async function loadQueue(): Promise<void> {
-  if (queueLoaded) return;
-  queueLoaded = true;
-  try {
-    const raw = await fs.readFile(QUEUE_PATH, "utf8");
-    queue = JSON.parse(raw) as QueuedEvent[];
-  } catch {
-    queue = [];
-  }
+function readQueue(): QueuedEvent[] {
+	try {
+		const raw = fs.readFileSync(outboundQueueFile(), "utf8");
+		const parsed = JSON.parse(raw) as QueueFile;
+		return Array.isArray(parsed.events) ? parsed.events : [];
+	} catch {
+		return [];
+	}
 }
 
-async function saveQueue(): Promise<void> {
-  try {
-    await fs.mkdir(path.dirname(QUEUE_PATH), { recursive: true });
-    await fs.writeFile(QUEUE_PATH, JSON.stringify(queue, null, 2), "utf8");
-  } catch (err) {
-    console.warn(`[eventQueue] save failed: ${(err as Error).message}`);
-  }
+function writeQueue(events: QueuedEvent[]): void {
+	ensureDir();
+	const tmp = `${outboundQueueFile()}.${process.pid}.tmp`;
+	const data = JSON.stringify({ events }, null, 2);
+	fs.writeFileSync(tmp, data, "utf8");
+	fs.renameSync(tmp, outboundQueueFile());
 }
 
-// ── Connectivity check ────────────────────────────────────────────────────
+let flushMutex = Promise.resolve();
 
-async function isConnected(): Promise<boolean> {
-  try {
-    const res = await fetch("https://events.pagerduty.com", {
-      method: "HEAD",
-      signal: AbortSignal.timeout(3000),
-    });
-    return res.ok || res.status < 500;
-  } catch {
-    return false;
-  }
+export function enqueueEvent(ev: QueuedEvent): void {
+	const q = readQueue();
+	q.push(ev);
+	writeQueue(q);
 }
 
-// ── Delivery ─────────────────────────────────────────────────────────────
-
-async function deliverEvent(event: QueuedEvent): Promise<void> {
-  const mock = process.env.PAGERDUTY_MOCK !== "false";
-
-  if (mock) {
-    console.log(
-      `[pagerduty:mock] ${event.payload.event_action.toUpperCase()} ` +
-        `dedup_key=${event.payload.dedup_key ?? "—"} ` +
-        `summary="${event.payload.payload?.summary ?? "—"}"`,
-    );
-    event.status = "sent";
-    return;
-  }
-
-  const apiKey = process.env.PAGERDUTY_API_KEY;
-  if (!apiKey) throw new Error("PAGERDUTY_API_KEY not configured");
-
-  const payload = { ...event.payload, routing_key: apiKey };
-
-  const res = await fetch(PAGERDUTY_EVENTS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(10_000),
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`PagerDuty HTTP ${res.status}: ${body}`);
-  }
+/** When AGENT_OFFLINE=true or probe fails, callers enqueue instead of sending. */
+export function isAgentOffline(): boolean {
+	return process.env.AGENT_OFFLINE === "true" || process.env.AGENT_OFFLINE === "1";
 }
 
-// ── Sync loop ─────────────────────────────────────────────────────────────
-
-async function syncPending(): Promise<void> {
-  const pending = queue.filter((e) => e.status === "pending");
-  if (pending.length === 0) return;
-
-  const connected = await isConnected();
-  if (!connected) {
-    console.warn(`[eventQueue] offline — ${pending.length} events queued`);
-    return;
-  }
-
-  for (const event of pending) {
-    event.attempts += 1;
-    event.lastAttemptAt = new Date().toISOString();
-    try {
-      await deliverEvent(event);
-      event.status = "sent";
-    } catch (err) {
-      event.error = (err as Error).message;
-      if (event.attempts >= 5) {
-        event.status = "failed";
-        console.error(`[eventQueue] giving up on event ${event.id}: ${event.error}`);
-      }
-    }
-  }
-
-  await saveQueue();
+export async function probeConnectivity(): Promise<boolean> {
+	if (isAgentOffline()) {
+		return false;
+	}
+	const url = process.env.AGENT_CONNECTIVITY_URL?.trim();
+	if (!url) {
+		return true;
+	}
+	try {
+		const ctrl = new AbortController();
+		const t = setTimeout(() => ctrl.abort(), 4000);
+		const res = await fetch(url, { method: "HEAD", signal: ctrl.signal }).catch(() => null);
+		clearTimeout(t);
+		return res !== null && res.ok;
+	} catch {
+		return false;
+	}
 }
 
-function startSyncLoop(): void {
-  if (syncTimer) return;
-  syncTimer = setInterval(() => {
-    void syncPending();
-  }, SYNC_INTERVAL_MS);
+async function runFlush(): Promise<void> {
+	const online = await probeConnectivity();
+	if (!online) {
+		return;
+	}
+	const pending = readQueue();
+	if (pending.length === 0) {
+		return;
+	}
+	const remaining: QueuedEvent[] = [];
+	for (const ev of pending) {
+		if (ev.kind === "trigger") {
+			const { ok } = await sendTrigger(ev.payload);
+			if (!ok) {
+				remaining.push(ev);
+			}
+		} else {
+			const { ok } = await sendResolve(ev.dedupKey);
+			if (!ok) {
+				remaining.push(ev);
+			}
+		}
+	}
+	writeQueue(remaining);
 }
 
-// ── Public API ────────────────────────────────────────────────────────────
-
-/**
- * Add a PagerDuty event to the queue and attempt immediate delivery.
- * Returns the queued event ID.
- */
-export async function enqueue(payload: PagerDutyEventPayload): Promise<string> {
-  await loadQueue();
-
-  const event: QueuedEvent = {
-    id: randomUUID(),
-    payload,
-    enqueuedAt: new Date().toISOString(),
-    status: "pending",
-    attempts: 0,
-  };
-
-  queue.push(event);
-  await saveQueue();
-
-  // Attempt immediate delivery — fall through to sync loop on failure.
-  try {
-    await deliverEvent(event);
-    await saveQueue();
-  } catch (err) {
-    event.error = (err as Error).message;
-    console.warn(`[eventQueue] immediate delivery failed, will retry: ${event.error}`);
-    await saveQueue();
-  }
-
-  startSyncLoop();
-  return event.id;
+export function flushQueueSoon(): void {
+	flushMutex = flushMutex.then(() => runFlush()).catch(() => {});
 }
 
-/** Return all queued events (for observability). */
-export async function getQueue(): Promise<QueuedEvent[]> {
-  await loadQueue();
-  return [...queue];
-}
-
-/** Remove sent/failed events older than `maxAgeMs`. */
-export async function pruneQueue(maxAgeMs = 7 * 24 * 3600 * 1000): Promise<void> {
-  await loadQueue();
-  const cutoff = Date.now() - maxAgeMs;
-  queue = queue.filter(
-    (e) =>
-      e.status === "pending" ||
-      new Date(e.enqueuedAt).getTime() > cutoff,
-  );
-  await saveQueue();
+export function flushQueueSyncForTests(): void {
+	// exposed if tests need drain; runner calls flushQueueSoon
 }

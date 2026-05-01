@@ -1,21 +1,15 @@
-/**
- * GET /api/incidents?siteId={siteId}
- *
- * Returns all incidents for a site ordered by most recent.
- * Backed by agents/incidentStore.ts (in-memory + persisted to disk).
- */
-
 import { NextResponse } from "next/server";
-import { getIncidentsForSite } from "@/agents/incidentStore";
 
-export async function GET(req: Request) {
+import { listIncidentsBySite } from "@/agents/incidentStore";
+
+export const runtime = "nodejs";
+
+export async function GET(req: Request): Promise<NextResponse> {
 	const { searchParams } = new URL(req.url);
 	const siteId = searchParams.get("siteId")?.trim();
-
 	if (!siteId) {
-		return NextResponse.json({ error: "siteId param required" }, { status: 400 });
+		return NextResponse.json({ error: "Missing siteId query parameter" }, { status: 400 });
 	}
-
-	const incidents = await getIncidentsForSite(siteId);
+	const incidents = await listIncidentsBySite(siteId);
 	return NextResponse.json(incidents);
 }

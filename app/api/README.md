@@ -40,7 +40,7 @@ Demand[]
 ---
 
 ### `GET /api/incidents?siteId={id}`
-All incidents for a site, ordered by most recent.
+All incidents for a site, ordered by most recent. _(Implemented under [`incidents/`](./incidents/) — Member 3 agents layer.)_
 
 **Response:**
 ```typescript

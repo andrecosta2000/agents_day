@@ -1,208 +1,176 @@
-/**
- * SiteAgent
- *
- * Monitors one deployed vertical farming site on a 30-second loop:
- *
- *   1. Read sensor data from the simulator
- *   2. Check all values against thresholds
- *   3. If an anomaly is detected:
- *      a. Create an Incident in the store
- *      b. Attempt automated fix (up to MAX_FIX_ATTEMPTS times)
- *      c. If resolved → log success, close incident
- *      d. If not resolved → escalate to the Orchestrator callback
- *
- * The agent does not call PagerDuty directly — it escalates to the
- * Orchestrator, which decides whether to page based on cross-site patterns.
- */
+import type { AgentAction, Incident, SensorReading, SeverityLevel } from "@/types/interfaces";
 
-import type { Site, SensorReading, SeverityLevel } from "@/types/interfaces";
-import {
-  generateReading,
-  checkThresholds,
-  breachSeverity,
-  type ThresholdBreach,
-} from "./simulator";
-import {
-  createIncident,
-  addAgentAction,
-  updateIncidentStatus,
-  getIncidentsForSite,
-} from "./incidentStore";
+import type { AnomalyKind } from "./thresholds";
+import { detectAnomalies } from "./thresholds";
+import type { InjectedAnomaly } from "./simulator";
 
-const POLL_INTERVAL_MS = 30_000;
-const MAX_FIX_ATTEMPTS = 3;
-const FIX_RETRY_DELAY_MS = 5_000;
-
-// ── Automated fix logic ───────────────────────────────────────────────────
-
-/**
- * Attempt a simulated automated remediation action for a sensor breach.
- * In production this would send commands to actuators (HVAC, irrigation,
- * grow-lights, etc.). Here we model it probabilistically so the agent
- * has realistic behaviour in demo mode.
- *
- * Returns `true` if the fix succeeded.
- */
-async function attemptFix(
-  site: Site,
-  breach: ThresholdBreach,
-): Promise<{ action: string; success: boolean }> {
-  const actionMap: Record<string, string> = {
-    tempC: breach.value > breach.max ? "Lowering HVAC setpoint by 2°C" : "Raising HVAC setpoint by 2°C",
-    humidityPct: breach.value > breach.max ? "Activating dehumidifier" : "Activating humidifier",
-    ph: breach.value > breach.max ? "Dosing pH-down solution" : "Dosing pH-up solution",
-    waterFlowLPerMin: breach.value > breach.max ? "Throttling pump speed" : "Increasing pump speed",
-    lightLux: breach.value > breach.max ? "Dimming grow lights by 20%" : "Increasing grow-light intensity",
-  };
-
-  const action =
-    actionMap[breach.field] ?? `Adjusting ${breach.field} actuator`;
-
-  // Simulate a 70% fix success rate — realistic for single-step remediation.
-  await new Promise((r) => setTimeout(r, FIX_RETRY_DELAY_MS));
-  const success = Math.random() < 0.7;
-
-  return { action, success };
+export enum SiteAgentState {
+	Idle = "idle",
+	Monitoring = "monitoring",
+	Acting = "acting",
+	EscalationPending = "escalation_pending",
 }
 
-// ── SiteAgent class ───────────────────────────────────────────────────────
+export type SiteHandoff = {
+	siteId: string;
+	severity: SeverityLevel;
+	description: string;
+	sensorSnapshot: SensorReading;
+	agentActions: AgentAction[];
+	primaryKind: AnomalyKind;
+};
 
-export type EscalateCallback = (
-  site: Site,
-  incidentId: string,
-  severity: SeverityLevel,
-  breaches: ThresholdBreach[],
-  reading: SensorReading,
-) => void;
+export type SiteTickResult = {
+	handoff: SiteHandoff | null;
+	/** SiteAgent cleared anomaly via automation — simulator should acknowledge fix. */
+	fixedLocally: boolean;
+};
+
+function actionForAttempt(kind: AnomalyKind, attemptIndexZeroBased: number): string {
+	const pick = attemptIndexZeroBased % 3;
+	switch (kind) {
+		case "temp":
+			return pick === 0
+				? "Adjusted HVAC setpoint to 22°C"
+				: pick === 1
+					? "Increased ventilation duty cycle 8%"
+					: "Trimmed supplemental heating curve −0.8°C";
+		case "humidity":
+			return pick === 0
+				? "Reduced misting duty cycle 10%"
+				: pick === 1
+					? "Increased dehumidifier target −3% RH"
+					: "Shifted airflow pattern to upper canopy";
+		case "ph":
+			return pick === 0
+				? "Adjusted nutrient dosing (pH buffer +)"
+				: pick === 1
+					? "Flushed calibration probe & rechecked sample line"
+					: "Micro-adjusted irrigation acid feed rate";
+		case "waterFlow":
+			return pick === 0
+				? "Increased irrigation flow 15%"
+				: pick === 1
+					? "Opened backup circulation valve"
+					: "Pulsed line purge to clear obstruction";
+		case "light":
+			return pick === 0
+				? "Extended photoperiod 45 minutes"
+				: pick === 1
+					? "Raised LED drive current 6%"
+					: "Rebalanced rack-level PAR targets";
+	}
+}
+
+function severityForKind(kind: AnomalyKind): SeverityLevel {
+	switch (kind) {
+		case "light":
+		case "humidity":
+			return "medium";
+		case "temp":
+		case "ph":
+			return "high";
+		case "waterFlow":
+			return "critical";
+	}
+}
+
+function describeIncident(kind: AnomalyKind, r: SensorReading): string {
+	switch (kind) {
+		case "temp":
+			return `Temperature out of range (${r.tempC.toFixed(1)}°C) after automated HVAC adjustments.`;
+		case "humidity":
+			return `Humidity out of range (${r.humidityPct}% RH) — misting/dehumidification insufficient.`;
+		case "ph":
+			return `Irrigation pH drift (${r.ph}) beyond acceptable band.`;
+		case "waterFlow":
+			return `Water flow critically low (${r.waterFlowLPerMin} L/min) — circulation risk.`;
+		case "light":
+			return `PPFD/lux below target (${r.lightLux} lux) — crop photoperiod at risk.`;
+	}
+}
 
 export class SiteAgent {
-  private site: Site;
-  private onEscalate: EscalateCallback;
-  private timer: ReturnType<typeof setInterval> | null = null;
-  private running = false;
-  private lastReading: SensorReading | null = null;
+	readonly siteId: string;
+	state: SiteAgentState = SiteAgentState.Idle;
+	private attempt = 0;
+	private actions: AgentAction[] = [];
+	private primaryKind: AnomalyKind | null = null;
 
-  constructor(site: Site, onEscalate: EscalateCallback) {
-    this.site = site;
-    this.onEscalate = onEscalate;
-  }
+	constructor(siteId: string) {
+		this.siteId = siteId;
+	}
 
-  /** Start the monitoring loop. */
-  start(): void {
-    if (this.running) return;
-    this.running = true;
-    console.log(`[SiteAgent:${this.site.id}] starting — polling every ${POLL_INTERVAL_MS / 1000}s`);
-    // Run immediately, then on interval.
-    void this.tick();
-    this.timer = setInterval(() => void this.tick(), POLL_INTERVAL_MS);
-  }
+	handleTick(reading: SensorReading, injected?: InjectedAnomaly): SiteTickResult {
+		const kinds = detectAnomalies(reading);
 
-  /** Stop the monitoring loop. */
-  stop(): void {
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
-    }
-    this.running = false;
-    console.log(`[SiteAgent:${this.site.id}] stopped`);
-  }
+		if (kinds.length === 0) {
+			this.softReset();
+			return { handoff: null, fixedLocally: false };
+		}
 
-  /** Return the most recently observed sensor reading. */
-  getLastReading(): SensorReading | null {
-    return this.lastReading;
-  }
+		this.state = SiteAgentState.Acting;
+		if (!this.primaryKind) {
+			this.primaryKind = injected?.kinds[0] ?? kinds[0]!;
+			this.attempt = 0;
+			this.actions = [];
+		}
 
-  // ── Private ─────────────────────────────────────────────────────────────
+		this.attempt += 1;
+		const auto = injected?.autoResolvable === true;
+		const ts = new Date().toISOString();
+		const msg = actionForAttempt(this.primaryKind, this.attempt - 1);
+		const success = auto && this.attempt >= 2;
 
-  private async tick(): Promise<void> {
-    try {
-      // Inject anomalies at 15% probability so the demo has activity.
-      const reading = generateReading(this.site.id, { probability: 0.15 });
-      this.lastReading = reading;
+		if (success) {
+			this.actions.push({ timestamp: ts, action: msg, result: "success" });
+			this.softReset();
+			this.state = SiteAgentState.Monitoring;
+			return { handoff: null, fixedLocally: true };
+		}
 
-      const breaches = checkThresholds(reading);
-      if (breaches.length === 0) return; // all clear
+		const actionResult: AgentAction["result"] =
+			this.attempt >= 3 ? "failed" : "pending";
+		this.actions.push({ timestamp: ts, action: msg, result: actionResult });
 
-      const severity = breachSeverity(breaches);
-      const description = this.buildDescription(breaches);
+		if (this.attempt < 3) {
+			return { handoff: null, fixedLocally: false };
+		}
 
-      console.log(
-        `[SiteAgent:${this.site.id}] anomaly detected — ` +
-          `${breaches.map((b) => b.field).join(", ")} out of range (${severity})`,
-      );
+		this.state = SiteAgentState.EscalationPending;
+		const handoff: SiteHandoff = {
+			siteId: this.siteId,
+			severity: severityForKind(this.primaryKind),
+			description: describeIncident(this.primaryKind, reading),
+			sensorSnapshot: { ...reading },
+			agentActions: this.actions.map((a) =>
+				a.result === "pending" ? { ...a, result: "failed" as const } : a,
+			),
+			primaryKind: this.primaryKind,
+		};
+		this.softReset();
+		return { handoff, fixedLocally: false };
+	}
 
-      // Check if there's already an open incident for this site to avoid duplicates.
-      const openIncidents = await getIncidentsForSite(this.site.id);
-      const alreadyOpen = openIncidents.some(
-        (inc) => inc.status === "open" || inc.status === "agent_resolving",
-      );
-      if (alreadyOpen) return;
+	private softReset(): void {
+		this.attempt = 0;
+		this.actions = [];
+		this.primaryKind = null;
+		this.state = SiteAgentState.Idle;
+	}
+}
 
-      // Create the incident.
-      const incident = await createIncident({
-        siteId: this.site.id,
-        severity,
-        description,
-        sensorSnapshot: reading,
-      });
-
-      // Mark as being worked.
-      await updateIncidentStatus(incident.id, "agent_resolving");
-
-      // Attempt automated fixes.
-      let resolved = false;
-      for (let attempt = 1; attempt <= MAX_FIX_ATTEMPTS; attempt++) {
-        for (const breach of breaches) {
-          const { action, success } = await attemptFix(this.site, breach);
-
-          await addAgentAction(incident.id, {
-            action: `[Attempt ${attempt}] ${action}`,
-            result: success ? "success" : "failed",
-          });
-
-          if (success) {
-            // Verify the fix by taking a new reading.
-            const verification = generateReading(this.site.id);
-            const remaining = checkThresholds(verification);
-            this.lastReading = verification;
-
-            if (remaining.length === 0) {
-              resolved = true;
-              break;
-            }
-          }
-        }
-        if (resolved) break;
-      }
-
-      if (resolved) {
-        await updateIncidentStatus(incident.id, "resolved");
-        await addAgentAction(incident.id, {
-          action: "Automated remediation succeeded — incident closed",
-          result: "success",
-        });
-        console.log(`[SiteAgent:${this.site.id}] incident ${incident.id} resolved automatically`);
-      } else {
-        await updateIncidentStatus(incident.id, "escalated");
-        await addAgentAction(incident.id, {
-          action: `Automated remediation failed after ${MAX_FIX_ATTEMPTS} attempts — escalating`,
-          result: "failed",
-        });
-        console.warn(
-          `[SiteAgent:${this.site.id}] incident ${incident.id} escalated to Orchestrator`,
-        );
-        this.onEscalate(this.site, incident.id, severity, breaches, reading);
-      }
-    } catch (err) {
-      console.error(`[SiteAgent:${this.site.id}] tick error: ${(err as Error).message}`);
-    }
-  }
-
-  private buildDescription(breaches: ThresholdBreach[]): string {
-    const parts = breaches.map(
-      ({ field, value, min, max }) =>
-        `${field}=${value} (expected ${min}–${max})`,
-    );
-    return `Sensor out of range: ${parts.join("; ")}`;
-  }
+export function draftIncident(h: SiteHandoff, id: string): Incident {
+	const now = new Date().toISOString();
+	return {
+		id,
+		siteId: h.siteId,
+		severity: h.severity,
+		status: "agent_resolving",
+		description: h.description,
+		sensorSnapshot: h.sensorSnapshot,
+		agentActions: h.agentActions,
+		createdAt: now,
+		updatedAt: now,
+	};
 }

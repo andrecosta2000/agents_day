@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -B 2 -A 20 \"Model\\\\$1 \" /Users/andrecosta/agents_day/agents_day/node_modules/javascript-lp-solver/dist/index.d.ts)",
+      "Bash(export PATH=\"/opt/homebrew/bin:$PATH\")",
+      "Bash(npx tsx *)",
+      "Bash(git fetch *)"
+    ]
+  }
+}

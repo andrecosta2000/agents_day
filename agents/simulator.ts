@@ -1,164 +1,142 @@
-/**
- * Sensor Simulator
- *
- * Generates realistic SensorReading objects for deployed sites.
- * In normal operation values stay within healthy thresholds; anomaly injection
- * is controlled per-sensor via AnomalyConfig so the SiteAgent has something
- * to detect and act on.
- *
- * Normal sensor ranges (from agents/README.md):
- *   Temperature   18–28 °C
- *   Humidity      60–80 %
- *   pH            5.5–6.5
- *   Water flow    2–10 L/min
- *   Light         5000–20 000 lux
- */
-
 import type { SensorReading } from "@/types/interfaces";
 
-// ── Threshold constants ────────────────────────────────────────────────────
+import type { AnomalyKind } from "./thresholds";
+import { THRESHOLDS } from "./thresholds";
 
-export const THRESHOLDS = {
-  tempC:             { min: 18, max: 28 },
-  humidityPct:       { min: 60, max: 80 },
-  ph:                { min: 5.5, max: 6.5 },
-  waterFlowLPerMin:  { min: 2,  max: 10  },
-  lightLux:          { min: 5000, max: 20000 },
-} as const;
-
-// ── Anomaly configuration ─────────────────────────────────────────────────
-
-export interface AnomalyConfig {
-  /** 0–1 probability that a given reading is anomalous */
-  probability?: number;
-  /** Which sensors to perturb. Defaults to all. */
-  sensors?: Array<keyof typeof THRESHOLDS>;
-  /** How far outside the range to go (multiplier on the gap). Default 1.5 */
-  severity?: number;
+export interface InjectedAnomaly {
+	kinds: AnomalyKind[];
+	autoResolvable: boolean;
 }
 
-// ── Normal baseline values (midpoints with small variance) ────────────────
-
-function midpoint(min: number, max: number): number {
-  return (min + max) / 2;
+export interface SimulatorTick {
+	reading: SensorReading;
+	injected?: InjectedAnomaly;
 }
 
-function jitter(value: number, pct = 0.05): number {
-  return value + value * (Math.random() * 2 - 1) * pct;
+type SiteSimState = {
+	tickIndex: number;
+};
+
+/** Deterministic PRNG per site/tick. */
+function mulberry32(seed: number): () => number {
+	return function () {
+		let t = (seed += 0x6d2b79f5);
+		t = Math.imul(t ^ (t >>> 15), t | 1);
+		t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
+function hashSite(siteId: string): number {
+	let h = 0;
+	for (let i = 0; i < siteId.length; i++) {
+		h = Math.imul(31, h) + siteId.charCodeAt(i);
+	}
+	return h >>> 0;
 }
 
-function normalReading(siteId: string): SensorReading {
-  return {
-    siteId,
-    timestamp: new Date().toISOString(),
-    tempC:            Number(jitter(midpoint(18, 28), 0.08).toFixed(1)),
-    humidityPct:      Number(jitter(midpoint(60, 80), 0.06).toFixed(1)),
-    ph:               Number(jitter(midpoint(5.5, 6.5), 0.04).toFixed(2)),
-    waterFlowLPerMin: Number(jitter(midpoint(2, 10), 0.10).toFixed(2)),
-    lightLux:         Math.round(jitter(midpoint(5000, 20000), 0.08)),
-  };
+function nominalReading(siteId: string, iso: string): SensorReading {
+	return {
+		siteId,
+		timestamp: iso,
+		tempC: 23,
+		humidityPct: 70,
+		ph: 6.0,
+		waterFlowLPerMin: 6,
+		lightLux: 12000,
+	};
 }
 
-/**
- * Push a sensor value outside its safe range.
- * severity > 1 means more extreme — e.g. 1.5 = halfway into danger zone.
- */
-function makeAnomalous(
-  field: keyof typeof THRESHOLDS,
-  severity: number,
-): number {
-  const { min, max } = THRESHOLDS[field];
-  const range = max - min;
-  const gap = range * 0.1 * severity; // breach by at least 10% of range
-
-  // Randomly go high or low.
-  if (Math.random() < 0.5) {
-    return Number((max + gap).toFixed(2));
-  }
-  return Number((min - gap).toFixed(2));
+function jitter(reading: SensorReading, rnd: () => number): SensorReading {
+	const j = (x: number, mag: number) => x + (rnd() - 0.5) * mag;
+	return {
+		...reading,
+		tempC: Math.round(j(reading.tempC, 0.9) * 10) / 10,
+		humidityPct: Math.round(j(reading.humidityPct, 5)),
+		ph: Math.round(j(reading.ph, 0.12) * 10) / 10,
+		waterFlowLPerMin: Math.round(j(reading.waterFlowLPerMin, 0.45) * 10) / 10,
+		lightLux: Math.round(j(reading.lightLux, 900)),
+	};
 }
 
-// ── Public API ────────────────────────────────────────────────────────────
-
-/**
- * Generate one SensorReading for the given site.
- *
- * When anomalyConfig is provided there is a `probability` chance that one or
- * more of the listed sensors will read outside its safe threshold.
- */
-export function generateReading(
-  siteId: string,
-  anomalyConfig?: AnomalyConfig,
-): SensorReading {
-  const reading = normalReading(siteId);
-
-  if (!anomalyConfig) return reading;
-
-  const {
-    probability = 0.1,
-    sensors = Object.keys(THRESHOLDS) as Array<keyof typeof THRESHOLDS>,
-    severity = 1.5,
-  } = anomalyConfig;
-
-  if (Math.random() < probability) {
-    // Pick one sensor to make anomalous.
-    const target = sensors[Math.floor(Math.random() * sensors.length)];
-    const anomalousValue = makeAnomalous(target, severity);
-    (reading as unknown as Record<string, number>)[target] = anomalousValue;
-  }
-
-  return reading;
+function applyAnomaly(reading: SensorReading, kind: AnomalyKind): SensorReading {
+	const r = { ...reading };
+	switch (kind) {
+		case "temp":
+			r.tempC = THRESHOLDS.tempC.max + 3;
+			break;
+		case "humidity":
+			r.humidityPct = THRESHOLDS.humidityPct.max + 6;
+			break;
+		case "ph":
+			r.ph = THRESHOLDS.ph.min - 0.45;
+			break;
+		case "waterFlow":
+			r.waterFlowLPerMin = THRESHOLDS.waterFlowLPerMin.min - 0.95;
+			break;
+		case "light":
+			r.lightLux = THRESHOLDS.lightLux.min - 900;
+			break;
+	}
+	return r;
 }
 
-/**
- * Check a SensorReading against the safe thresholds.
- * Returns a list of breached fields.
- */
-export interface ThresholdBreach {
-  field: keyof typeof THRESHOLDS;
-  value: number;
-  min: number;
-  max: number;
-}
+export class SensorSimulator {
+	private readonly sites = new Map<string, SiteSimState>();
+	/** Sticky anomaly until remediation succeeds or orchestrator clears. */
+	private readonly sticky = new Map<string, InjectedAnomaly>();
 
-export function checkThresholds(reading: SensorReading): ThresholdBreach[] {
-  const breaches: ThresholdBreach[] = [];
-  const fields = Object.keys(THRESHOLDS) as Array<keyof typeof THRESHOLDS>;
+	private rng(siteId: string, salt: number): () => number {
+		const st = this.sites.get(siteId);
+		const seed = hashSite(siteId) ^ ((st?.tickIndex ?? 0) * 2654435761) ^ salt;
+		return mulberry32(seed);
+	}
 
-  for (const field of fields) {
-    const value = reading[field] as number;
-    const { min, max } = THRESHOLDS[field];
-    if (value < min || value > max) {
-      breaches.push({ field, value, min, max });
-    }
-  }
+	private bump(siteId: string): SiteSimState {
+		const cur = this.sites.get(siteId) ?? { tickIndex: 0 };
+		const next = { tickIndex: cur.tickIndex + 1 };
+		this.sites.set(siteId, next);
+		return next;
+	}
 
-  return breaches;
-}
+	/** After SiteAgent successfully auto-remediated. */
+	acknowledgeSuccessfulFix(siteId: string): void {
+		this.sticky.delete(siteId);
+	}
 
-/**
- * Determine the severity level from a list of breaches.
- * Multiple breaches or extreme values escalate severity.
- */
-export function breachSeverity(
-  breaches: ThresholdBreach[],
-): "low" | "medium" | "high" | "critical" {
-  if (breaches.length === 0) return "low";
+	/** After escalation so the site can generate fresh anomalies later. */
+	clearSticky(siteId: string): void {
+		this.sticky.delete(siteId);
+	}
 
-  const maxExcess = Math.max(
-    ...breaches.map(({ value, min, max }) => {
-      const range = max - min;
-      const excess = value > max ? (value - max) / range : (min - value) / range;
-      return excess;
-    }),
-  );
+	next(siteId: string): SimulatorTick {
+		this.bump(siteId);
+		const iso = new Date().toISOString();
+		const rnd = this.rng(siteId, 1);
 
-  if (breaches.length >= 3 || maxExcess >= 0.5) return "critical";
-  if (breaches.length === 2 || maxExcess >= 0.25) return "high";
-  if (maxExcess >= 0.1) return "medium";
-  return "low";
+		const stuck = this.sticky.get(siteId);
+		if (stuck) {
+			let reading = nominalReading(siteId, iso);
+			reading = jitter(reading, rnd);
+			const kind = stuck.kinds[0]!;
+			reading = applyAnomaly(reading, kind);
+			return { reading, injected: stuck };
+		}
+
+		let reading = nominalReading(siteId, iso);
+		reading = jitter(reading, rnd);
+
+		const injectChance = 0.14;
+		if (rnd() > injectChance) {
+			return { reading };
+		}
+
+		const kindsRoll: AnomalyKind[] = ["temp", "humidity", "ph", "waterFlow", "light"];
+		const kind = kindsRoll[Math.floor(rnd() * kindsRoll.length)]!;
+		const autoResolvable = rnd() > 0.38;
+		const injected: InjectedAnomaly = { kinds: [kind], autoResolvable };
+		this.sticky.set(siteId, injected);
+		reading = applyAnomaly(reading, kind);
+		return { reading, injected };
+	}
 }

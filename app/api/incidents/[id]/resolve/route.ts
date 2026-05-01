@@ -1,30 +1,34 @@
-/**
- * POST /api/incidents/[id]/resolve
- *
- * Marks an incident as resolved and sends a PagerDuty resolve event
- * (no-op in mock mode, safe to call if no PagerDuty alert was sent).
- */
-
 import { NextResponse } from "next/server";
-import { resolveIncident, getIncident } from "@/agents/incidentStore";
-import { resolveAlert } from "@/agents/pagerduty";
 
-type Params = { params: Promise<{ id: string }> };
+import { enqueueEvent, flushQueueSoon, probeConnectivity } from "@/agents/eventQueue";
+import { getIncidentById, resolveIncidentById } from "@/agents/incidentStore";
+import { sendResolve } from "@/agents/pagerduty";
 
-export async function POST(_req: Request, { params }: Params) {
-	const { id } = await params;
+export const runtime = "nodejs";
 
-	const updated = await resolveIncident(id);
+type RouteParams = { params: Promise<{ id: string }> };
+
+export async function POST(_req: Request, ctx: RouteParams): Promise<NextResponse> {
+	const { id } = await ctx.params;
+	const decoded = decodeURIComponent(id);
+	const existing = await getIncidentById(decoded);
+	if (!existing) {
+		return NextResponse.json({ error: "Incident not found" }, { status: 404 });
+	}
+
+	const updated = await resolveIncidentById(decoded);
 	if (!updated) {
 		return NextResponse.json({ error: "Incident not found" }, { status: 404 });
 	}
 
-	// If a PagerDuty alert was sent, resolve it too.
-	if (updated.pagerdutyIncidentId) {
-		void resolveAlert(id).catch((err: Error) =>
-			console.warn(`[incidents/${id}/resolve] PagerDuty resolve failed: ${err.message}`),
-		);
+	const dedupKey = updated.pagerdutyIncidentId ?? updated.id;
+	const online = await probeConnectivity();
+	if (!online) {
+		enqueueEvent({ kind: "resolve", dedupKey });
+	} else {
+		await sendResolve(dedupKey);
 	}
+	flushQueueSoon();
 
-	return NextResponse.json({ status: "resolved" });
+	return NextResponse.json({ status: "resolved" as const });
 }

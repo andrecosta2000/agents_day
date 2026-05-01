@@ -1,138 +1,99 @@
-/**
- * PagerDuty Events API v2 wrapper
- *
- * Translates UrbanFarm Incident objects into PagerDuty event payloads and
- * routes them through the eventQueue for offline resilience.
- *
- * Severity mapping (from agents/README.md):
- *   low      → info
- *   medium   → warning
- *   high     → error
- *   critical → critical
- *
- * Set PAGERDUTY_MOCK=true (default) to log to console instead of calling
- * the real API.  Set PAGERDUTY_MOCK=false and supply PAGERDUTY_API_KEY to
- * send live alerts.
- */
+import fs from "node:fs";
+import type { SeverityLevel } from "@/types/interfaces";
+import { pagerdutyMockLogFile, urbanfarmDir } from "./paths";
 
-import type { Incident, SeverityLevel, Site } from "@/types/interfaces";
-import { enqueue, type PagerDutyEventPayload } from "./eventQueue";
+const EVENTS_URL = "https://events.pagerduty.com/v2/enqueue";
 
-// ── Severity mapping ──────────────────────────────────────────────────────
+export type PagerDutySeverity = "info" | "warning" | "error" | "critical";
 
-const SEVERITY_MAP: Record<SeverityLevel, "info" | "warning" | "error" | "critical"> = {
-  low:      "info",
-  medium:   "warning",
-  high:     "error",
-  critical: "critical",
-};
-
-// ── Dedup key ─────────────────────────────────────────────────────────────
-
-/**
- * A stable dedup key for an incident so that re-triggers for the same
- * incident are deduplicated by PagerDuty.
- */
-function dedupKey(incidentId: string): string {
-  return `urbanfarm-${incidentId}`;
+function severityMap(sev: SeverityLevel): PagerDutySeverity {
+	switch (sev) {
+		case "low":
+			return "info";
+		case "medium":
+			return "warning";
+		case "high":
+			return "error";
+		case "critical":
+			return "critical";
+	}
 }
 
-// ── Payload builders ──────────────────────────────────────────────────────
-
-function buildTriggerPayload(
-  incident: Incident,
-  site: Site,
-): PagerDutyEventPayload {
-  const { sensorSnapshot: s } = incident;
-
-  return {
-    routing_key: process.env.PAGERDUTY_API_KEY ?? "MOCK",
-    event_action: "trigger",
-    dedup_key: dedupKey(incident.id),
-    client: "UrbanFarm Orchestrator",
-    payload: {
-      summary: `[${incident.severity.toUpperCase()}] ${site.name}: ${incident.description}`,
-      severity: SEVERITY_MAP[incident.severity],
-      source: `urbanfarm/${site.id}`,
-      timestamp: incident.createdAt,
-      custom_details: {
-        site_id: site.id,
-        site_name: site.name,
-        site_city: site.city,
-        incident_id: incident.id,
-        severity: incident.severity,
-        description: incident.description,
-        sensor_snapshot: {
-          tempC: s.tempC,
-          humidityPct: s.humidityPct,
-          ph: s.ph,
-          waterFlowLPerMin: s.waterFlowLPerMin,
-          lightLux: s.lightLux,
-          timestamp: s.timestamp,
-        },
-        agent_actions_attempted: incident.agentActions.length,
-        agent_actions: incident.agentActions.map((a) => ({
-          action: a.action,
-          result: a.result,
-          timestamp: a.timestamp,
-        })),
-      },
-    },
-    links: [
-      {
-        href: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/operations/${incident.id}`,
-        text: "View incident in UrbanFarm",
-      },
-    ],
-  };
+export function isPagerDutyMock(): boolean {
+	return process.env.PAGERDUTY_MOCK === "true" || process.env.PAGERDUTY_MOCK === "1";
 }
 
-function buildResolvePayload(incidentId: string): PagerDutyEventPayload {
-  return {
-    routing_key: process.env.PAGERDUTY_API_KEY ?? "MOCK",
-    event_action: "resolve",
-    dedup_key: dedupKey(incidentId),
-  };
+export function getRoutingKey(): string | undefined {
+	const k =
+		process.env.PAGERDUTY_ROUTING_KEY?.trim() ||
+		process.env.PAGERDUTY_INTEGRATION_KEY?.trim();
+	return k || undefined;
 }
 
-// ── Public API ────────────────────────────────────────────────────────────
-
-/**
- * Trigger a PagerDuty alert for an incident.
- * Returns the eventQueue entry ID for traceability.
- */
-export async function triggerAlert(
-  incident: Incident,
-  site: Site,
-): Promise<string> {
-  const payload = buildTriggerPayload(incident, site);
-  const queueId = await enqueue(payload);
-  console.log(
-    `[pagerduty] triggered alert for incident ${incident.id} ` +
-      `(site=${site.id}, severity=${incident.severity}, queueId=${queueId})`,
-  );
-  return queueId;
+export interface TriggerPayload {
+	dedupKey: string;
+	summary: string;
+	severity: SeverityLevel;
+	customDetails: Record<string, unknown>;
 }
 
-/**
- * Resolve a PagerDuty alert by incident ID.
- * Safe to call even if no alert was previously sent (PagerDuty ignores unknown dedup keys).
- */
-export async function resolveAlert(incidentId: string): Promise<void> {
-  const payload = buildResolvePayload(incidentId);
-  await enqueue(payload);
-  console.log(`[pagerduty] resolved alert for incident ${incidentId}`);
+function ensureUrbanfarmDir(): void {
+	fs.mkdirSync(urbanfarmDir(), { recursive: true });
 }
 
-/**
- * Acknowledge a PagerDuty alert (marks it as being worked).
- */
-export async function acknowledgeAlert(incidentId: string): Promise<void> {
-  const payload: PagerDutyEventPayload = {
-    routing_key: process.env.PAGERDUTY_API_KEY ?? "MOCK",
-    event_action: "acknowledge",
-    dedup_key: dedupKey(incidentId),
-  };
-  await enqueue(payload);
-  console.log(`[pagerduty] acknowledged alert for incident ${incidentId}`);
+function appendMockLog(line: object): void {
+	ensureUrbanfarmDir();
+	fs.appendFileSync(pagerdutyMockLogFile(), `${JSON.stringify(line)}\n`, "utf8");
+}
+
+/** Send Events API v2 trigger, or log locally when mock / missing key. */
+export async function sendTrigger(payload: TriggerPayload): Promise<{ mock: boolean; ok: boolean }> {
+	const routingKey = getRoutingKey();
+	const mock = isPagerDutyMock() || !routingKey;
+	const body = {
+		routing_key: routingKey ?? "mock",
+		event_action: "trigger" as const,
+		dedup_key: payload.dedupKey,
+		payload: {
+			summary: payload.summary,
+			severity: severityMap(payload.severity),
+			source: "urbanfarm-optimizer",
+			custom_details: payload.customDetails,
+		},
+	};
+
+	if (mock) {
+		appendMockLog({ ts: new Date().toISOString(), type: "trigger", body });
+		return { mock: true, ok: true };
+	}
+
+	const res = await fetch(EVENTS_URL, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(body),
+	});
+	return { mock: false, ok: res.ok };
+}
+
+/** Resolve correlating incident via same dedup_key. */
+export async function sendResolve(dedupKey: string): Promise<{ mock: boolean; ok: boolean }> {
+	const routingKey = getRoutingKey();
+	const mock = isPagerDutyMock() || !routingKey;
+	const body = {
+		routing_key: routingKey ?? "mock",
+		event_action: "resolve" as const,
+		dedup_key: dedupKey,
+	};
+
+	if (mock) {
+		appendMockLog({ ts: new Date().toISOString(), type: "resolve", body });
+		return { mock: true, ok: true };
+	}
+
+	const res = await fetch(EVENTS_URL, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(body),
+	});
+	return { mock: false, ok: res.ok };
 }
