@@ -1,0 +1,33 @@
+{
+	"site-lx-01": [
+		{ "siteId": "site-lx-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 1, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:00Z", "tempC": 22.1, "humidityPct": 72, "ph": 6.0, "waterFlowLPerMin": 5.8, "lightLux": 12400 },
+		{ "siteId": "site-lx-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 2, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:00Z", "tempC": 22.4, "humidityPct": 74, "ph": 6.1, "waterFlowLPerMin": 6.0, "lightLux": 12600 },
+		{ "siteId": "site-lx-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 3, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:00Z", "tempC": 21.9, "humidityPct": 73, "ph": 6.0, "waterFlowLPerMin": 5.5, "lightLux": 11800 },
+		{ "siteId": "site-lx-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 4, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:00Z", "tempC": 22.6, "humidityPct": 75, "ph": 6.2, "waterFlowLPerMin": 6.1, "lightLux": 12200 },
+		{ "siteId": "site-lx-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 5, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:00Z", "tempC": 22.0, "humidityPct": 71, "ph": 6.1, "waterFlowLPerMin": 5.9, "lightLux": 12500 },
+		{ "siteId": "site-lx-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 6, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:00Z", "tempC": 23.1, "humidityPct": 70, "ph": 6.0, "waterFlowLPerMin": 5.7, "lightLux": 12300 },
+		{ "siteId": "site-lx-01", "cropId": "crop-basil",   "cropName": "Genovese Basil",     "sectionIndex": 1, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:00Z", "tempC": 23.8, "humidityPct": 68, "ph": 6.0, "waterFlowLPerMin": 4.2, "lightLux": 15600 },
+		{ "siteId": "site-lx-01", "cropId": "crop-basil",   "cropName": "Genovese Basil",     "sectionIndex": 2, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:00Z", "tempC": 24.2, "humidityPct": 84, "ph": 6.1, "waterFlowLPerMin": 4.0, "lightLux": 15200 },
+		{ "siteId": "site-lx-01", "cropId": "crop-basil",   "cropName": "Genovese Basil",     "sectionIndex": 3, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:00Z", "tempC": 23.5, "humidityPct": 70, "ph": 5.9, "waterFlowLPerMin": 4.5, "lightLux": 15400 }
+	],
+	"site-lx-02": [
+		{ "siteId": "site-lx-02", "cropId": "crop-lettuce",     "cropName": "Butterhead Lettuce", "sectionIndex": 1, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:30Z", "tempC": 21.5, "humidityPct": 71, "ph": 6.2, "waterFlowLPerMin": 5.0, "lightLux": 11400 },
+		{ "siteId": "site-lx-02", "cropId": "crop-lettuce",     "cropName": "Butterhead Lettuce", "sectionIndex": 2, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:30Z", "tempC": 21.8, "humidityPct": 72, "ph": 6.1, "waterFlowLPerMin": 5.2, "lightLux": 11600 },
+		{ "siteId": "site-lx-02", "cropId": "crop-lettuce",     "cropName": "Butterhead Lettuce", "sectionIndex": 3, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:30Z", "tempC": 22.0, "humidityPct": 70, "ph": 6.3, "waterFlowLPerMin": 4.8, "lightLux": 11200 },
+		{ "siteId": "site-lx-02", "cropId": "crop-lettuce",     "cropName": "Butterhead Lettuce", "sectionIndex": 4, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:30Z", "tempC": 21.2, "humidityPct": 73, "ph": 6.0, "waterFlowLPerMin": 5.1, "lightLux": 11500 },
+		{ "siteId": "site-lx-02", "cropId": "crop-lettuce",     "cropName": "Butterhead Lettuce", "sectionIndex": 5, "allocatedM2": 300, "timestamp": "2026-05-01T11:48:30Z", "tempC": 21.6, "humidityPct": 69, "ph": 6.2, "waterFlowLPerMin": 5.3, "lightLux": 11300 },
+		{ "siteId": "site-lx-02", "cropId": "crop-microgreens", "cropName": "Radish Microgreens", "sectionIndex": 1, "allocatedM2": 350, "timestamp": "2026-05-01T11:48:30Z", "tempC": 20.5, "humidityPct": 76, "ph": 6.0, "waterFlowLPerMin": 3.8, "lightLux": 3800 },
+		{ "siteId": "site-lx-02", "cropId": "crop-microgreens", "cropName": "Radish Microgreens", "sectionIndex": 2, "allocatedM2": 350, "timestamp": "2026-05-01T11:48:30Z", "tempC": 20.2, "humidityPct": 77, "ph": 6.1, "waterFlowLPerMin": 3.5, "lightLux": 8200 }
+	],
+	"site-pt-01": [
+		{ "siteId": "site-pt-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 1, "allocatedM2": 400, "timestamp": "2026-05-01T11:48:10Z", "tempC": 21.4, "humidityPct": 67, "ph": 5.9, "waterFlowLPerMin": 5.6, "lightLux": 10200 },
+		{ "siteId": "site-pt-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 2, "allocatedM2": 400, "timestamp": "2026-05-01T11:48:10Z", "tempC": 21.0, "humidityPct": 68, "ph": 6.0, "waterFlowLPerMin": 5.4, "lightLux": 10000 },
+		{ "siteId": "site-pt-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 3, "allocatedM2": 400, "timestamp": "2026-05-01T11:48:10Z", "tempC": 21.8, "humidityPct": 66, "ph": 5.9, "waterFlowLPerMin": 5.8, "lightLux": 10400 },
+		{ "siteId": "site-pt-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 4, "allocatedM2": 400, "timestamp": "2026-05-01T11:48:10Z", "tempC": 20.9, "humidityPct": 69, "ph": 6.1, "waterFlowLPerMin": 5.5, "lightLux": 10100 },
+		{ "siteId": "site-pt-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 5, "allocatedM2": 400, "timestamp": "2026-05-01T11:48:10Z", "tempC": 21.5, "humidityPct": 68, "ph": 5.8, "waterFlowLPerMin": 5.7, "lightLux": 10300 },
+		{ "siteId": "site-pt-01", "cropId": "crop-lettuce", "cropName": "Butterhead Lettuce", "sectionIndex": 6, "allocatedM2": 400, "timestamp": "2026-05-01T11:48:10Z", "tempC": 21.2, "humidityPct": 67, "ph": 6.0, "waterFlowLPerMin": 5.6, "lightLux": 9800 },
+		{ "siteId": "site-pt-01", "cropId": "crop-basil",   "cropName": "Genovese Basil",     "sectionIndex": 1, "allocatedM2": 367, "timestamp": "2026-05-01T11:48:10Z", "tempC": 21.0, "humidityPct": 68, "ph": 5.9, "waterFlowLPerMin": 1.2, "lightLux": 9800 },
+		{ "siteId": "site-pt-01", "cropId": "crop-basil",   "cropName": "Genovese Basil",     "sectionIndex": 2, "allocatedM2": 367, "timestamp": "2026-05-01T11:48:10Z", "tempC": 21.3, "humidityPct": 67, "ph": 5.8, "waterFlowLPerMin": 1.0, "lightLux": 10100 },
+		{ "siteId": "site-pt-01", "cropId": "crop-basil",   "cropName": "Genovese Basil",     "sectionIndex": 3, "allocatedM2": 366, "timestamp": "2026-05-01T11:48:10Z", "tempC": 20.8, "humidityPct": 69, "ph": 6.0, "waterFlowLPerMin": 1.4, "lightLux": 9900 }
+	]
+}
