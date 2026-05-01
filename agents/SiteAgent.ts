@@ -1,5 +1,6 @@
 import type { AgentAction, Incident, SensorReading, SeverityLevel } from "@/types/interfaces";
 
+import { decideRemediation } from "./llm";
 import type { AnomalyKind } from "./thresholds";
 import { detectAnomalies } from "./thresholds";
 import type { InjectedAnomaly } from "./simulator";
@@ -101,7 +102,10 @@ export class SiteAgent {
 		this.siteId = siteId;
 	}
 
-	handleTick(reading: SensorReading, injected?: InjectedAnomaly): SiteTickResult {
+	async handleTick(
+		reading: SensorReading,
+		injected?: InjectedAnomaly,
+	): Promise<SiteTickResult> {
 		const kinds = detectAnomalies(reading);
 
 		if (kinds.length === 0) {
@@ -119,7 +123,19 @@ export class SiteAgent {
 		this.attempt += 1;
 		const auto = injected?.autoResolvable === true;
 		const ts = new Date().toISOString();
-		const msg = actionForAttempt(this.primaryKind, this.attempt - 1);
+		const attemptNumber = this.attempt as 1 | 2 | 3;
+
+		const llmDecision = await decideRemediation({
+			siteId: this.siteId,
+			reading,
+			anomalyKind: this.primaryKind,
+			attemptNumber,
+			priorActions: [...this.actions],
+		});
+		const fallbackMsg = actionForAttempt(this.primaryKind, this.attempt - 1);
+		const msg = llmDecision
+			? `${llmDecision.action} — ${llmDecision.rationale}`
+			: fallbackMsg;
 		const success = auto && this.attempt >= 2;
 
 		if (success) {

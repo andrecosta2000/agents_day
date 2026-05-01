@@ -38,7 +38,7 @@ export function DemandSnippet({ demand, cityLabel, loading }: Props) {
 			) : demand.length === 0 ? (
 				<p className="mt-3 text-sm text-slate-500">No demand data for this city.</p>
 			) : (
-				<ul className="mt-3 divide-y divide-slate-800/80">
+				<ul className="mt-3 max-h-[20rem] divide-y divide-slate-800/80 overflow-y-auto overscroll-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 					{demand.map((row) => {
 						const trend = row.trend ? trendConfig[row.trend] : null;
 						return (
