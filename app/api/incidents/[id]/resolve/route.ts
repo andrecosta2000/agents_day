@@ -1,21 +1,34 @@
-/**
- * POST /api/incidents/[id]/resolve
- *
- * Marks an incident as resolved.
- *
- * TODO (Member 2): Wire to your incidentStore once agents/incidentStore.ts
- * is implemented. The stub below returns { status: "resolved" } immediately
- * so the IncidentFeed "Mark resolved" button works end-to-end in demo mode.
- */
-
 import { NextResponse } from "next/server";
 
-type Params = { params: Promise<{ id: string }> };
+import { enqueueEvent, flushQueueSoon, probeConnectivity } from "@/agents/eventQueue";
+import { getIncidentById, resolveIncidentById } from "@/agents/incidentStore";
+import { sendResolve } from "@/agents/pagerduty";
 
-export async function POST(_req: Request, { params }: Params) {
-	const { id } = await params;
+export const runtime = "nodejs";
 
-	// TODO (Member 2): replace with incidentStore.resolve(id)
-	console.log(`[incidents/${id}/resolve] stub — mark resolved`);
-	return NextResponse.json({ status: "resolved" });
+type RouteParams = { params: Promise<{ id: string }> };
+
+export async function POST(_req: Request, ctx: RouteParams): Promise<NextResponse> {
+	const { id } = await ctx.params;
+	const decoded = decodeURIComponent(id);
+	const existing = await getIncidentById(decoded);
+	if (!existing) {
+		return NextResponse.json({ error: "Incident not found" }, { status: 404 });
+	}
+
+	const updated = await resolveIncidentById(decoded);
+	if (!updated) {
+		return NextResponse.json({ error: "Incident not found" }, { status: 404 });
+	}
+
+	const dedupKey = updated.pagerdutyIncidentId ?? updated.id;
+	const online = await probeConnectivity();
+	if (!online) {
+		enqueueEvent({ kind: "resolve", dedupKey });
+	} else {
+		await sendResolve(dedupKey);
+	}
+	flushQueueSoon();
+
+	return NextResponse.json({ status: "resolved" as const });
 }

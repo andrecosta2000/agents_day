@@ -17,7 +17,7 @@ A site selection and feasibility platform for urban vertical farming. Helps inve
 ├── types/
 │   └── interfaces.ts        # Shared types — all members import from here
 ├── services/                # Member 1 — data integrations & optimizer
-├── agents/                  # Member 2 — autonomous agents & PagerDuty
+├── agents/                  # Member 3 — autonomous agents & PagerDuty
 ├── app/
 │   ├── api/                 # Member 2 — API routes
 │   └── components/          # Member 3 — UI components
@@ -31,6 +31,15 @@ cp .env.example .env.local
 npm install
 npm run dev
 ```
+
+### CSS toolchain (Tailwind)
+
+This project uses **Tailwind CSS v3** with PostCSS + Autoprefixer (no `@tailwindcss/oxide`). That avoids native Oxide bindings that often fail on locked-down macOS with **`code signature invalid (errno 85)`**. If you previously used Tailwind v4 here, configs live in [`tailwind.config.ts`](tailwind.config.ts), [`postcss.config.mjs`](postcss.config.mjs), and [`app/globals.css`](app/globals.css).
+
+Dev and production builds default to **`next dev/build --webpack`** so Turbopack is not required when native SWC cannot load.
+
+If native addons still fail after a clean install, try **Node 20 or 22 LTS**, delete `node_modules` and `package-lock.json`, run `npm install` again, or resolve macOS quarantine/signing for binaries under `node_modules` (IT/security policies sometimes block them).
+
 
 ## API Contract
 
@@ -51,5 +60,5 @@ All members import from `@/types/interfaces.ts`. Never duplicate — update the 
 ## Integration Order
 
 1. `/services` merges first (Member 1)
-2. `/app/api` integrates services, `/agents` wires incidents (Member 2)
+2. `/app/api` integrates services; `/agents` wires incidents & PagerDuty (Member 3)
 3. `/app/components` swaps mocks for real endpoints (Member 3)
