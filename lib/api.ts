@@ -1,13 +1,20 @@
 import demandByCity from "@/app/mocks/demand.json";
+import deployedSitesList from "@/app/mocks/deployed-sites.json";
 import incidentsBySite from "@/app/mocks/incidents.json";
 import reportsById from "@/app/mocks/reports.json";
+import sectionReadingsBySite from "@/app/mocks/section-readings.json";
+import sensorReadingsBySite from "@/app/mocks/sensor-readings.json";
 import sitesAll from "@/app/mocks/sites.json";
-import type { Demand, Incident, Site, SiteReport } from "@/types/interfaces";
+import type { Demand, Incident, Site, SiteReport, SensorReading } from "@/types/interfaces";
+import type { SectionReading } from "@/lib/section-types";
 
 const sites = sitesAll as Site[];
+const deployedSites = deployedSitesList as Site[];
 const reports = reportsById as Record<string, SiteReport>;
 const demandIndex = demandByCity as Record<string, Demand[]>;
 const incidentsIndex = incidentsBySite as Record<string, Incident[]>;
+const sensorIndex = sensorReadingsBySite as Record<string, SensorReading>;
+const sectionIndex = sectionReadingsBySite as Record<string, SectionReading[]>;
 
 /** When unset or any value other than `"false"`, bundled mocks are used (good default until API routes land). */
 export function shouldUseApiMocks(): boolean {
@@ -60,6 +67,27 @@ export async function getIncidents(siteId: string): Promise<Incident[]> {
 	return fetchJson<Incident[]>(
 		`/api/incidents?siteId=${encodeURIComponent(siteId)}`,
 	);
+}
+
+export async function getDeployedSites(): Promise<Site[]> {
+	if (shouldUseApiMocks()) {
+		return deployedSites;
+	}
+	return fetchJson<Site[]>("/api/sites/deployed");
+}
+
+export async function getSensorReading(siteId: string): Promise<SensorReading | null> {
+	if (shouldUseApiMocks()) {
+		return sensorIndex[siteId] ?? null;
+	}
+	return fetchJson<SensorReading>(`/api/sites/${encodeURIComponent(siteId)}/sensors`);
+}
+
+export async function getSectionReadings(siteId: string): Promise<SectionReading[]> {
+	if (shouldUseApiMocks()) {
+		return sectionIndex[siteId] ?? [];
+	}
+	return fetchJson<SectionReading[]>(`/api/sites/${encodeURIComponent(siteId)}/sections`);
 }
 
 export async function resolveIncident(
