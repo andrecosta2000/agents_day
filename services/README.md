@@ -10,8 +10,11 @@ All external data integrations and the intelligence layer (optimizer, energy mod
 
 | File | Status | Description |
 |------|--------|-------------|
-| `crops.ts` | ✅ | Static crop DB (10 crops: greens, herbs, fruits) |
-| `demand.ts` | ✅ | Produce demand per city (15 cities) |
+| `crops.ts` | ✅ | Static crop DB (10 crops: greens, herbs, fruits) — used as fallback |
+| `research.ts` | ✅ | **Demand Research Agent** — Claude API + web search → trending crops |
+| `demand.ts` | ✅ | Cache-aware demand fetcher (cache → live research → static fallback) |
+| `seed-cache.ts` | ✅ | Hand-curated cache seed for demo cities (no API needed) |
+| `suitability.ts` | ✅ | Climate-fit filter (rejects crops where HVAC eats the margin) |
 | `climate.ts` | ✅ | Monthly climate via OpenMeteo (with mock fallback) |
 | `zoning.ts` | ✅ | Deterministic mock zoning + height + price |
 | `hvac.ts` | ✅ | HVAC kWh/cost per crop given climate |
@@ -58,7 +61,16 @@ getSolarAssessment(lat: number, lng: number, roofAreaM2: number): Promise<SolarA
 getWaterSources(lat: number, lng: number, radiusM: number): Promise<WaterSource[]>
 
 getProduceDemand(city: string): Promise<Demand[]>
+getDemandResearch(city: string, opts?: { forceRefresh?: boolean })
+  : Promise<DemandResearchResult>   // demands + agronomic profiles + source label
 getSupportedCities(): string[]
+
+researchDemand(city: string): Promise<DemandResearchResult>   // direct (skip cache)
+
+scoreSuitability(crop: Crop, climate: ClimateData): SuitabilityScore
+filterSuitableCrops(crops: Crop[], climate: ClimateData, threshold?: number)
+  : { suitable: Crop[]; scores: SuitabilityScore[] }
+resolveCrop(name: string, pricePerKg: number, profiles: CropProfile[]): Crop
 
 optimizeCropMix({
   footprintAreaM2: number,
@@ -84,24 +96,59 @@ All types from `@/types/interfaces.ts`.
 The intended call order for a full feasibility report:
 
 ```typescript
-const zoning  = await getZoning(lat, lng);
-const climate = await getClimate(lat, lng);
-const solar   = await getSolarAssessment(lat, lng, site.areaM2);
-const water   = await getWaterSources(lat, lng, 2000);
-const demand  = await getProduceDemand(site.city);
+import {
+  getZoning, getClimate, getSolarAssessment, getWaterSources,
+  getDemandResearch, filterSuitableCrops, resolveCrop,
+  optimizeCropMix, calculateRoi,
+} from "@/services";
 
+// 1. Local context
+const zoning   = await getZoning(lat, lng);
+const climate  = await getClimate(lat, lng);
+const solar    = await getSolarAssessment(lat, lng, site.areaM2);
+const water    = await getWaterSources(lat, lng, 2000);
+
+// 2. Researched demand (cache-first)
+const research = await getDemandResearch(site.city);
+
+// 3. Filter crops by climate suitability
+const candidates = research.demands.map((d) =>
+  resolveCrop(d.crop, d.pricePerKg, research.profiles),
+);
+const { suitable } = filterSuitableCrops(candidates, climate);
+
+// 4. Optimize and roll up to ROI
 const cropPlan = optimizeCropMix({
   footprintAreaM2: site.areaM2,
   floors: Math.max(1, Math.floor(zoning.maxHeightM / 4)),
-  demand,
+  demand: research.demands.filter((d) => suitable.find((c) => c.name === d.crop)),
   climate,
+  crops: suitable,
 });
-
 const roi = calculateRoi({
   site, cropPlan, solar, waterSources: water,
   pricePerM2Eur: zoning.estimatedPricePerM2,
 });
 ```
+
+## Demand Pipeline (cache → research → fallback)
+
+`getDemandResearch(city)` resolves in this order:
+
+1. **Disk cache** at `.cache/demand-<city>.json` (24h TTL by default).
+2. **Live research** via the Claude API (`research.ts`) when `ANTHROPIC_API_KEY` is set. The agent uses web search to surface 6–12 currently-trending crops with demand estimates, prices, agronomic profiles, and source citations.
+3. **Static fallback** — per-capita × population. Used when both cache and live research are unavailable.
+
+The result includes `source: "live" | "cache" | "fallback"` so the UI can show provenance.
+
+### Working without an API key (demo mode)
+
+```bash
+npx tsx services/seed-cache.ts          # seeds Lisbon, NYC, Berlin
+npx tsx services/seed-cache.ts Berlin   # one city
+```
+
+This writes hand-curated cache files matching the live-research schema. The pipeline behaves identically — once you set `ANTHROPIC_API_KEY` in `.env.local`, expired cache entries refresh from real research.
 
 ## External APIs
 

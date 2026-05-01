@@ -5,6 +5,17 @@ export { getAllCrops, getCropById, getCropByName } from "./crops";
 export { getHvacCost, getHvacCostsForCrops } from "./hvac";
 export { getSolarAssessment } from "./solar";
 export { getWaterSources } from "./water";
-export { getProduceDemand, getSupportedCities } from "./demand";
+export {
+  getProduceDemand,
+  getDemandResearch,
+  getSupportedCities,
+} from "./demand";
+export { researchDemand } from "./research";
+export {
+  scoreSuitability,
+  filterSuitableCrops,
+  resolveCrop,
+  SUITABILITY_CONSTANTS,
+} from "./suitability";
 export { optimizeCropMix, OPTIMIZER_CONSTANTS } from "./optimizer";
 export { calculateRoi, ROI_CONSTANTS } from "./roi";

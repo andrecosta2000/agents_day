@@ -12,14 +12,16 @@ import {
   getClimate,
   getSolarAssessment,
   getWaterSources,
-  getProduceDemand,
+  getDemandResearch,
   getSupportedCities,
   optimizeCropMix,
   calculateRoi,
   getAllCrops,
   getHvacCost,
+  filterSuitableCrops,
+  resolveCrop,
 } from "./index";
-import type { Site } from "@/types/interfaces";
+import type { Site, Crop } from "@/types/interfaces";
 
 // Approximate city centers for the demo cities (lat, lng).
 const CITY_COORDS: Record<string, [number, number]> = {
@@ -86,13 +88,23 @@ async function main() {
   header(`UrbanFarm Site Feasibility Report — ${city}`);
   console.log(C.dim + `  coordinates: ${lat}, ${lng}` + C.reset);
 
-  // 1. Demand
-  section("1. Local Produce Demand");
-  const demand = await getProduceDemand(city);
-  for (const d of demand.slice(0, 5)) {
-    kv(d.crop, `${d.demandKgPerMonth.toLocaleString()} kg/mo @ €${d.pricePerKg}/kg`);
+  // 1. Demand (dynamic research)
+  section("1. Local Produce Demand (researched)");
+  const research = await getDemandResearch(city);
+  const sourceLabel =
+    research.source === "live" ? C.green + "live" + C.reset
+    : research.source === "cache" ? C.cyan + "cache" + C.reset
+    : C.yellow + "fallback" + C.reset;
+  console.log(C.dim + `  source: ${sourceLabel}  as of ${research.asOf}` + C.reset);
+  const demand = research.demands;
+  for (const d of demand.slice(0, 6)) {
+    const trendIcon = d.trend === "rising" ? C.green + "↑" + C.reset
+      : d.trend === "falling" ? C.red + "↓" + C.reset
+      : C.dim + "→" + C.reset;
+    const conf = d.confidence !== undefined ? ` ${C.dim}(conf ${d.confidence})${C.reset}` : "";
+    kv(d.crop, `${trendIcon} ${d.demandKgPerMonth.toLocaleString()} kg/mo @ €${d.pricePerKg}/kg${conf}`);
   }
-  console.log(C.dim + `  ... and ${demand.length - 5} more crops` + C.reset);
+  if (demand.length > 6) console.log(C.dim + `  ... and ${demand.length - 6} more crops` + C.reset);
 
   // 2. Zoning
   section("2. Zoning (mock)");
@@ -147,13 +159,27 @@ async function main() {
   }
   console.log(C.dim + `  fetched in ${waterMs}ms` + C.reset);
 
-  // 7. Optimizer
-  section("7. Crop Mix Optimization (1000 m² × 6 floors)");
+  // 7a. Suitability filter
+  section("7. Suitability Filter (climate fit)");
+  const candidateCrops: Crop[] = demand.map((d) =>
+    resolveCrop(d.crop, d.pricePerKg, research.profiles),
+  );
+  const { suitable, scores } = filterSuitableCrops(candidateCrops, climate);
+  for (const s of scores) {
+    const color = s.score >= 0.7 ? C.green : s.score >= 0.3 ? C.yellow : C.red;
+    const status = s.reason === "ok" ? "PASS" : "DROP";
+    kv(s.cropName, `${color}${status}${C.reset}  score ${s.score.toFixed(2)}  rev €${s.monthlyRevenuePerM2Eur}/m²  hvac €${s.monthlyHvacCostPerM2Eur}/m²`);
+  }
+  console.log(C.dim + `  ${suitable.length} of ${candidateCrops.length} crops kept` + C.reset);
+
+  // 7b. Optimizer
+  section("8. Crop Mix Optimization (1000 m² × 6 floors)");
   const cropPlan = optimizeCropMix({
     footprintAreaM2: 1000,
     floors: 6,
-    demand,
+    demand: demand.filter((d) => suitable.find((c) => c.name === d.crop)),
     climate,
+    crops: suitable,
   });
   for (const a of cropPlan.allocations) {
     const profitColor = a.monthlyProfitEur > 0 ? C.green : C.red;
@@ -166,8 +192,8 @@ async function main() {
   kv("Monthly HVAC", C.red + eur(cropPlan.totalMonthlyCostEur) + C.reset);
   kv("Monthly profit", C.bold + C.green + eur(cropPlan.totalMonthlyProfitEur) + C.reset);
 
-  // 8. ROI
-  section("8. Full Site ROI");
+  // 9. ROI
+  section("9. Full Site ROI");
   const site: Site = {
     id: "demo-1",
     name: `${city} Demo Site`,

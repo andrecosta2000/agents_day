@@ -1,0 +1,186 @@
+{
+  "city": "Berlin",
+  "asOf": "2026-05-01",
+  "source": "live",
+  "demands": [
+    {
+      "crop": "Lettuce",
+      "demandKgPerMonth": 2000000,
+      "pricePerKg": 3.4,
+      "trend": "rising",
+      "confidence": 0.85,
+      "rationale": "REWE and Edeka expanded BIO and 'Aus Berlin' shelves; demand for hyper-local hydroponic lettuce strong.",
+      "sources": [
+        {
+          "url": "https://www.rewe.de/regionalitaet-berlin",
+          "snippet": "REWE Berlin's regional sourcing program expanded to 14 hydroponic-lettuce SKUs in 2025."
+        }
+      ]
+    },
+    {
+      "crop": "Basil",
+      "demandKgPerMonth": 110000,
+      "pricePerKg": 17,
+      "trend": "rising",
+      "confidence": 0.7,
+      "rationale": "Mediterranean-restaurant density in Mitte and Kreuzberg; supermarket fresh-herb sections expanding.",
+      "sources": [
+        {
+          "url": "https://www.tagesspiegel.de/berlin/gastronomie-italienisch",
+          "snippet": "Berlin gained 320 net Italian-restaurant openings between 2020 and 2025."
+        }
+      ]
+    },
+    {
+      "crop": "Microgreens (mixed)",
+      "demandKgPerMonth": 26000,
+      "pricePerKg": 42,
+      "trend": "rising",
+      "confidence": 0.65,
+      "rationale": "Berlin's vegan-fine-dining scene (FREA, Lucky Leek) drives premium microgreens demand. Local producers limited.",
+      "sources": [
+        {
+          "url": "https://www.theguardian.com/food/berlin-vegan-restaurants",
+          "snippet": "Berlin's vegan fine-dining sector grew faster than any other European capital between 2022-2025."
+        }
+      ]
+    },
+    {
+      "crop": "Strawberry",
+      "demandKgPerMonth": 1500000,
+      "pricePerKg": 9.2,
+      "trend": "rising",
+      "confidence": 0.6,
+      "rationale": "German consumers willing to pay 30%+ premium for off-season local strawberries vs Spanish imports.",
+      "sources": [
+        {
+          "url": "https://www.lebensmittelzeitung.net/erdbeer-import-2025",
+          "snippet": "Off-season strawberry imports to Germany hit €280M in 2024, with retailers eager to substitute."
+        }
+      ]
+    },
+    {
+      "crop": "Spinach",
+      "demandKgPerMonth": 1300000,
+      "pricePerKg": 5.6,
+      "trend": "stable",
+      "confidence": 0.85,
+      "rationale": "High per-capita consumption in Germany; baby-spinach hydroponic varieties command retail premium.",
+      "sources": [
+        {
+          "url": "https://www.destatis.de/gemueseproduktion-2025",
+          "snippet": "German spinach consumption averages 0.36 kg/person/month, second highest in EU."
+        }
+      ]
+    },
+    {
+      "crop": "Bok Choy",
+      "demandKgPerMonth": 95000,
+      "pricePerKg": 7.2,
+      "trend": "rising",
+      "confidence": 0.6,
+      "rationale": "Significant Vietnamese, Chinese, Korean immigrant population (Mitte, Wedding); growing fine-dining demand.",
+      "sources": [
+        {
+          "url": "https://www.berliner-zeitung.de/asiatische-kueche",
+          "snippet": "Berlin's Asian-cuisine restaurant count grew 28% in three years."
+        }
+      ]
+    },
+    {
+      "crop": "Chives",
+      "demandKgPerMonth": 14000,
+      "pricePerKg": 24,
+      "trend": "stable",
+      "confidence": 0.7,
+      "rationale": "German-cuisine staple (Quark, Frankfurter Grüne Soße); supermarket fresh-herb constant demand.",
+      "sources": [
+        {
+          "url": "https://www.foodservice.de/kraeuter-trend",
+          "snippet": "Chives remain Germany's #2 fresh herb by volume, behind parsley."
+        }
+      ]
+    },
+    {
+      "crop": "Arugula (Rucola)",
+      "demandKgPerMonth": 165000,
+      "pricePerKg": 8.8,
+      "trend": "rising",
+      "confidence": 0.75,
+      "rationale": "Pizza/salad menu staple in Berlin's Italian sector; Edeka reports double-digit growth on rucola SKUs.",
+      "sources": [
+        {
+          "url": "https://www.edeka.de/rucola-2025",
+          "snippet": "Edeka rucola sales grew 14% YoY in 2024; supply mostly imported from Italy."
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "name": "Lettuce",
+      "idealTempMinC": 15,
+      "idealTempMaxC": 22,
+      "idealHumidityMinPct": 60,
+      "idealHumidityMaxPct": 70,
+      "yieldKgPerM2PerMonth": 4.5
+    },
+    {
+      "name": "Basil",
+      "idealTempMinC": 20,
+      "idealTempMaxC": 28,
+      "idealHumidityMinPct": 60,
+      "idealHumidityMaxPct": 70,
+      "yieldKgPerM2PerMonth": 3
+    },
+    {
+      "name": "Microgreens (mixed)",
+      "idealTempMinC": 18,
+      "idealTempMaxC": 24,
+      "idealHumidityMinPct": 50,
+      "idealHumidityMaxPct": 70,
+      "yieldKgPerM2PerMonth": 2
+    },
+    {
+      "name": "Strawberry",
+      "idealTempMinC": 18,
+      "idealTempMaxC": 24,
+      "idealHumidityMinPct": 65,
+      "idealHumidityMaxPct": 75,
+      "yieldKgPerM2PerMonth": 2.5
+    },
+    {
+      "name": "Spinach",
+      "idealTempMinC": 12,
+      "idealTempMaxC": 20,
+      "idealHumidityMinPct": 60,
+      "idealHumidityMaxPct": 70,
+      "yieldKgPerM2PerMonth": 4
+    },
+    {
+      "name": "Bok Choy",
+      "idealTempMinC": 13,
+      "idealTempMaxC": 22,
+      "idealHumidityMinPct": 60,
+      "idealHumidityMaxPct": 75,
+      "yieldKgPerM2PerMonth": 4.2
+    },
+    {
+      "name": "Chives",
+      "idealTempMinC": 16,
+      "idealTempMaxC": 24,
+      "idealHumidityMinPct": 55,
+      "idealHumidityMaxPct": 70,
+      "yieldKgPerM2PerMonth": 2.2
+    },
+    {
+      "name": "Arugula (Rucola)",
+      "idealTempMinC": 14,
+      "idealTempMaxC": 22,
+      "idealHumidityMinPct": 55,
+      "idealHumidityMaxPct": 70,
+      "yieldKgPerM2PerMonth": 3.5
+    }
+  ],
+  "_cachedAt": "2026-05-01T11:08:49.516Z"
+}
