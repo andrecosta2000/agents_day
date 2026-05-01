@@ -65,7 +65,8 @@ export async function getClimate(lat: number, lng: number): Promise<ClimateData>
       annualAvgTempC: Number(annualTemp.toFixed(1)),
       annualAvgHumidityPct: Number(annualHum.toFixed(1)),
     };
-  } catch {
+  } catch (err) {
+    console.warn(`[climate] OpenMeteo fetch failed for (${lat}, ${lng}), using mock: ${(err as Error).message}`);
     return mockClimate(lat);
   }
 }
@@ -75,15 +76,19 @@ function mockClimate(lat: number): ClimateData {
   const absLat = Math.abs(lat);
   const annualTemp = 30 - absLat * 0.5;
   const seasonalSwing = absLat * 0.4;
+  // cos(0) at phase=6 (July NH) → +swing = warmest; cos(±π) at phase=0/12 (Jan NH) → -swing = coldest.
+  // Previously negated (-seasonalSwing) which inverted the seasons — fixed.
   const monthlyTemp = Array.from({ length: 12 }, (_, i) => {
     const phase = lat >= 0 ? i : (i + 6) % 12; // northern vs. southern hemisphere
-    const seasonal = Math.cos(((phase - 6) / 12) * 2 * Math.PI) * -seasonalSwing;
+    const seasonal = Math.cos(((phase - 6) / 12) * 2 * Math.PI) * seasonalSwing;
     return Number((annualTemp + seasonal).toFixed(1));
   });
+  // Base sunlight hours vary by latitude: equator ~10 h/day, poles ~4 h/day.
+  const baseSun = Math.max(4, 10 - absLat * 0.04);
   const monthlySun = Array.from({ length: 12 }, (_, i) => {
     const phase = lat >= 0 ? i : (i + 6) % 12;
-    const seasonal = Math.cos(((phase - 6) / 12) * 2 * Math.PI) * -3;
-    return Number((8 + seasonal).toFixed(1));
+    const seasonal = Math.cos(((phase - 6) / 12) * 2 * Math.PI) * 3;
+    return Number((baseSun + seasonal).toFixed(1));
   });
   const monthlyHum = Array(12).fill(65);
 
