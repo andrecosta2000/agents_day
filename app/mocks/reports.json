@@ -1,0 +1,484 @@
+{
+	"site-lx-01": {
+		"site": {
+			"id": "site-lx-01",
+			"name": "Alcântara Vertical Hub",
+			"lat": 38.705,
+			"lng": -9.178,
+			"zone": "industrial",
+			"maxHeightM": 45,
+			"areaM2": 3200,
+			"score": 87,
+			"city": "Lisbon"
+		},
+		"zoning": {
+			"type": "industrial",
+			"maxHeightM": 45,
+			"restrictions": [
+				"Green roof incentive eligible",
+				"Noise buffer required on north facade"
+			],
+			"estimatedPricePerM2": 210
+		},
+		"climate": {
+			"monthlyAvgTempC": [
+				11,
+				12,
+				14,
+				15,
+				17,
+				19,
+				22,
+				23,
+				21,
+				18,
+				14,
+				12
+			],
+			"monthlyAvgHumidityPct": [
+				76,
+				74,
+				72,
+				70,
+				68,
+				66,
+				65,
+				66,
+				70,
+				73,
+				76,
+				77
+			],
+			"monthlyAvgSunlightHours": [
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				10,
+				8,
+				7,
+				5,
+				4
+			],
+			"annualAvgTempC": 17.2,
+			"annualAvgHumidityPct": 71
+		},
+		"hvacCosts": [
+			{
+				"cropId": "crop-lettuce",
+				"monthlyKwh": 8200,
+				"monthlyCostEur": 2050,
+				"annualCostEur": 24600
+			},
+			{
+				"cropId": "crop-basil",
+				"monthlyKwh": 5400,
+				"monthlyCostEur": 1350,
+				"annualCostEur": 16200
+			}
+		],
+		"solar": {
+			"annualKwhGeneration": 420000,
+			"installationCostEur": 280000,
+			"annualGridCostEur": 62000,
+			"roiYears": 6.5,
+			"recommendation": "hybrid"
+		},
+		"waterSources": [
+			{
+				"type": "municipal",
+				"name": "EPAL mains",
+				"distanceM": 120,
+				"lat": 38.706,
+				"lng": -9.177
+			},
+			{
+				"type": "river",
+				"name": "Tagus estuary intake",
+				"distanceM": 890,
+				"lat": 38.69,
+				"lng": -9.165
+			}
+		],
+		"cropPlan": {
+			"allocations": [
+				{
+					"crop": {
+						"id": "crop-lettuce",
+						"name": "Butterhead lettuce",
+						"idealTempMinC": 18,
+						"idealTempMaxC": 24,
+						"idealHumidityMinPct": 60,
+						"idealHumidityMaxPct": 80,
+						"yieldKgPerM2PerMonth": 4.2,
+						"avgMarketPricePerKg": 3.5,
+						"growthCycleDays": 45,
+						"lightHoursRequired": 14
+					},
+					"allocatedM2": 1800,
+					"floorsUsed": 6,
+					"monthlyYieldKg": 7560,
+					"monthlyRevenueEur": 26460,
+					"monthlyHvacCostEur": 2050,
+					"monthlyProfitEur": 18200
+				},
+				{
+					"crop": {
+						"id": "crop-basil",
+						"name": "Genovese basil",
+						"idealTempMinC": 20,
+						"idealTempMaxC": 26,
+						"idealHumidityMinPct": 55,
+						"idealHumidityMaxPct": 75,
+						"yieldKgPerM2PerMonth": 2.1,
+						"avgMarketPricePerKg": 11,
+						"growthCycleDays": 35,
+						"lightHoursRequired": 16
+					},
+					"allocatedM2": 900,
+					"floorsUsed": 3,
+					"monthlyYieldKg": 1890,
+					"monthlyRevenueEur": 20790,
+					"monthlyHvacCostEur": 1350,
+					"monthlyProfitEur": 16240
+				}
+			],
+			"totalMonthlyRevenueEur": 47250,
+			"totalMonthlyCostEur": 5200,
+			"totalMonthlyProfitEur": 38440,
+			"breakevenMonths": 38
+		},
+		"roi": {
+			"monthlyRevenueEur": 47250,
+			"monthlyHvacCostEur": 3400,
+			"monthlyEnergyCostEur": 4100,
+			"monthlyWaterCostEur": 780,
+			"monthlyNetProfitEur": 35180,
+			"annualNetProfitEur": 422160,
+			"estimatedInvestmentEur": 4200000,
+			"breakevenYears": 9.9
+		}
+	},
+	"site-lx-02": {
+		"site": {
+			"id": "site-lx-02",
+			"name": "Marvila Warehouse District",
+			"lat": 38.728,
+			"lng": -9.112,
+			"zone": "mixed",
+			"maxHeightM": 36,
+			"areaM2": 2800,
+			"score": 79,
+			"city": "Lisbon"
+		},
+		"zoning": {
+			"type": "mixed",
+			"maxHeightM": 36,
+			"restrictions": [
+				"Retail frontage setback 5m",
+				"Noise limits after 22:00"
+			],
+			"estimatedPricePerM2": 245
+		},
+		"climate": {
+			"monthlyAvgTempC": [
+				11,
+				12,
+				14,
+				15,
+				17,
+				19,
+				22,
+				23,
+				21,
+				18,
+				14,
+				12
+			],
+			"monthlyAvgHumidityPct": [
+				76,
+				74,
+				72,
+				70,
+				68,
+				66,
+				65,
+				66,
+				70,
+				73,
+				76,
+				77
+			],
+			"monthlyAvgSunlightHours": [
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				10,
+				8,
+				7,
+				5,
+				4
+			],
+			"annualAvgTempC": 17.2,
+			"annualAvgHumidityPct": 71
+		},
+		"hvacCosts": [
+			{
+				"cropId": "crop-lettuce",
+				"monthlyKwh": 7100,
+				"monthlyCostEur": 1775,
+				"annualCostEur": 21300
+			},
+			{
+				"cropId": "crop-microgreens",
+				"monthlyKwh": 6200,
+				"monthlyCostEur": 1550,
+				"annualCostEur": 18600
+			}
+		],
+		"solar": {
+			"annualKwhGeneration": 310000,
+			"installationCostEur": 215000,
+			"annualGridCostEur": 71000,
+			"roiYears": 7.8,
+			"recommendation": "grid"
+		},
+		"waterSources": [
+			{
+				"type": "municipal",
+				"name": "EPAL mains",
+				"distanceM": 340,
+				"lat": 38.73,
+				"lng": -9.11
+			}
+		],
+		"cropPlan": {
+			"allocations": [
+				{
+					"crop": {
+						"id": "crop-lettuce",
+						"name": "Butterhead lettuce",
+						"idealTempMinC": 18,
+						"idealTempMaxC": 24,
+						"idealHumidityMinPct": 60,
+						"idealHumidityMaxPct": 80,
+						"yieldKgPerM2PerMonth": 4.2,
+						"avgMarketPricePerKg": 3.5,
+						"growthCycleDays": 45,
+						"lightHoursRequired": 14
+					},
+					"allocatedM2": 1500,
+					"floorsUsed": 5,
+					"monthlyYieldKg": 6300,
+					"monthlyRevenueEur": 22050,
+					"monthlyHvacCostEur": 1775,
+					"monthlyProfitEur": 15880
+				},
+				{
+					"crop": {
+						"id": "crop-microgreens",
+						"name": "Radish microgreens",
+						"idealTempMinC": 18,
+						"idealTempMaxC": 23,
+						"idealHumidityMinPct": 60,
+						"idealHumidityMaxPct": 85,
+						"yieldKgPerM2PerMonth": 3,
+						"avgMarketPricePerKg": 26,
+						"growthCycleDays": 12,
+						"lightHoursRequired": 18
+					},
+					"allocatedM2": 700,
+					"floorsUsed": 2,
+					"monthlyYieldKg": 2100,
+					"monthlyRevenueEur": 54600,
+					"monthlyHvacCostEur": 1550,
+					"monthlyProfitEur": 48650
+				}
+			],
+			"totalMonthlyRevenueEur": 76650,
+			"totalMonthlyCostEur": 5100,
+			"totalMonthlyProfitEur": 64530,
+			"breakevenMonths": 44
+		},
+		"roi": {
+			"monthlyRevenueEur": 76650,
+			"monthlyHvacCostEur": 3325,
+			"monthlyEnergyCostEur": 3900,
+			"monthlyWaterCostEur": 620,
+			"monthlyNetProfitEur": 64105,
+			"annualNetProfitEur": 769260,
+			"estimatedInvestmentEur": 5100000,
+			"breakevenYears": 6.6
+		}
+	},
+	"site-pt-01": {
+		"site": {
+			"id": "site-pt-01",
+			"name": "Matosinhos Coastal Facility",
+			"lat": 41.182,
+			"lng": -8.69,
+			"zone": "industrial",
+			"maxHeightM": 40,
+			"areaM2": 4100,
+			"score": 82,
+			"city": "Porto"
+		},
+		"zoning": {
+			"type": "industrial",
+			"maxHeightM": 40,
+			"restrictions": [
+				"Coastal wind load checks",
+				"Stormwater retention"
+			],
+			"estimatedPricePerM2": 185
+		},
+		"climate": {
+			"monthlyAvgTempC": [
+				9,
+				10,
+				12,
+				13,
+				15,
+				17,
+				19,
+				19,
+				18,
+				15,
+				12,
+				10
+			],
+			"monthlyAvgHumidityPct": [
+				78,
+				77,
+				75,
+				74,
+				73,
+				72,
+				71,
+				72,
+				74,
+				76,
+				78,
+				79
+			],
+			"monthlyAvgSunlightHours": [
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				9,
+				7,
+				6,
+				4,
+				3
+			],
+			"annualAvgTempC": 14.9,
+			"annualAvgHumidityPct": 74
+		},
+		"hvacCosts": [
+			{
+				"cropId": "crop-lettuce",
+				"monthlyKwh": 9800,
+				"monthlyCostEur": 2450,
+				"annualCostEur": 29400
+			},
+			{
+				"cropId": "crop-basil",
+				"monthlyKwh": 6100,
+				"monthlyCostEur": 1525,
+				"annualCostEur": 18300
+			}
+		],
+		"solar": {
+			"annualKwhGeneration": 480000,
+			"installationCostEur": 305000,
+			"annualGridCostEur": 54000,
+			"roiYears": 5.9,
+			"recommendation": "solar"
+		},
+		"waterSources": [
+			{
+				"type": "reservoir",
+				"name": "Regional bulk supply",
+				"distanceM": 2100,
+				"lat": 41.2,
+				"lng": -8.62
+			},
+			{
+				"type": "municipal",
+				"name": "Águas do Porto",
+				"distanceM": 180,
+				"lat": 41.183,
+				"lng": -8.688
+			}
+		],
+		"cropPlan": {
+			"allocations": [
+				{
+					"crop": {
+						"id": "crop-lettuce",
+						"name": "Butterhead lettuce",
+						"idealTempMinC": 18,
+						"idealTempMaxC": 24,
+						"idealHumidityMinPct": 60,
+						"idealHumidityMaxPct": 80,
+						"yieldKgPerM2PerMonth": 4.2,
+						"avgMarketPricePerKg": 3.5,
+						"growthCycleDays": 45,
+						"lightHoursRequired": 14
+					},
+					"allocatedM2": 2400,
+					"floorsUsed": 6,
+					"monthlyYieldKg": 10080,
+					"monthlyRevenueEur": 35280,
+					"monthlyHvacCostEur": 2450,
+					"monthlyProfitEur": 26820
+				},
+				{
+					"crop": {
+						"id": "crop-basil",
+						"name": "Genovese basil",
+						"idealTempMinC": 20,
+						"idealTempMaxC": 26,
+						"idealHumidityMinPct": 55,
+						"idealHumidityMaxPct": 75,
+						"yieldKgPerM2PerMonth": 2.1,
+						"avgMarketPricePerKg": 11,
+						"growthCycleDays": 35,
+						"lightHoursRequired": 16
+					},
+					"allocatedM2": 1100,
+					"floorsUsed": 3,
+					"monthlyYieldKg": 2310,
+					"monthlyRevenueEur": 25410,
+					"monthlyHvacCostEur": 1525,
+					"monthlyProfitEur": 22180
+				}
+			],
+			"totalMonthlyRevenueEur": 60690,
+			"totalMonthlyCostEur": 6100,
+			"totalMonthlyProfitEur": 49000,
+			"breakevenMonths": 41
+		},
+		"roi": {
+			"monthlyRevenueEur": 60690,
+			"monthlyHvacCostEur": 3975,
+			"monthlyEnergyCostEur": 4800,
+			"monthlyWaterCostEur": 910,
+			"monthlyNetProfitEur": 47485,
+			"annualNetProfitEur": 569820,
+			"estimatedInvestmentEur": 4950000,
+			"breakevenYears": 8.7
+		}
+	}
+}
