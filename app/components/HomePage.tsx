@@ -8,7 +8,26 @@ import { AppShell } from "./AppShell";
 import { CitySelector } from "./CitySelector";
 import { DemandSnippet } from "./DemandSnippet";
 
-const CITIES = ["Lisbon", "Porto"] as const;
+// Mirrors Member 1's getSupportedCities() — all 15 cities
+export const SUPPORTED_CITIES = [
+	"Amsterdam",
+	"Barcelona",
+	"Berlin",
+	"Boston",
+	"Chicago",
+	"Dubai",
+	"Lisbon",
+	"London",
+	"Los Angeles",
+	"Madrid",
+	"New York",
+	"Paris",
+	"Porto",
+	"San Francisco",
+	"Seattle",
+] as const;
+
+export type SupportedCity = (typeof SUPPORTED_CITIES)[number];
 
 const SiteMap = dynamic(() => import("./SiteMap").then((m) => m.SiteMap), {
 	ssr: false,
@@ -50,7 +69,7 @@ export function HomePage({ city, sites, demand }: HomePageProps) {
 						</p>
 						<div className="mt-5 space-y-5">
 							<CitySelector
-								cities={CITIES}
+								cities={SUPPORTED_CITIES}
 								value={city}
 								onChange={onCityChange}
 								disabled={pending}
@@ -58,17 +77,21 @@ export function HomePage({ city, sites, demand }: HomePageProps) {
 							<DemandSnippet demand={demand} cityLabel={city} loading={pending} />
 						</div>
 						<p className="mt-4 text-[11px] text-slate-600">
-							{pending ? "Updating…" : `${sites.length} site${sites.length === 1 ? "" : "s"} in view`}
+							{pending
+								? "Updating…"
+								: sites.length === 0
+									? "No sites indexed yet for this city"
+									: `${sites.length} site${sites.length === 1 ? "" : "s"} in view`}
 						</p>
 					</div>
 				</div>
 
-				<div className="min-h-[420px] flex-1 p-4 pt-0 lg:absolute lg:inset-0 lg:min-h-0 lg:p-4">
+				<div className="relative min-h-[420px] flex-1 p-4 pt-0 lg:absolute lg:inset-0 lg:min-h-0 lg:p-4">
 					<div className="h-full min-h-[360px] overflow-hidden rounded-2xl border border-emerald-950/60 shadow-inner lg:min-h-[calc(100%-2rem)]">
 						<SiteMap
 							sites={sites}
 							cityKey={city}
-							className="h-full w-full [&_.leaflet-container]:h-full [&_.leaflet-container]:min-h-[360px] [&_.leaflet-container]:bg-slate-900"
+							className="relative h-full w-full [&_.leaflet-container]:h-full [&_.leaflet-container]:min-h-[360px] [&_.leaflet-container]:bg-slate-900"
 						/>
 					</div>
 				</div>
