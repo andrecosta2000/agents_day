@@ -1,12 +1,11 @@
+import { SUPPORTED_CITIES, type SupportedCity } from "@/lib/cities";
 import { getProduceDemand, getSites } from "@/lib/api";
 import { HomePage } from "./components/HomePage";
 
-const ALLOWED = ["Lisbon", "Porto"] as const;
-
-function resolveCity(raw: string | undefined): (typeof ALLOWED)[number] {
+function resolveCity(raw: string | undefined): SupportedCity {
 	if (!raw) return "Lisbon";
 	const lower = raw.trim().toLowerCase();
-	const hit = ALLOWED.find((c) => c.toLowerCase() === lower);
+	const hit = SUPPORTED_CITIES.find((c) => c.toLowerCase() === lower);
 	return hit ?? "Lisbon";
 }
 
