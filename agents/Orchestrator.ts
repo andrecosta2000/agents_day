@@ -100,7 +100,7 @@ export class OrchestratorAgent {
 		for (const siteId of this.siteIds) {
 			const { reading, injected } = this.simulator.next(siteId);
 			const agent = this.siteAgents.get(siteId)!;
-			const { handoff, fixedLocally } = agent.handleTick(reading, injected);
+			const { handoff, fixedLocally } = await agent.handleTick(reading, injected);
 
 			if (fixedLocally) {
 				this.simulator.acknowledgeSuccessfulFix(siteId);
