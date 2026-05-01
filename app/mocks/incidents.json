@@ -1,0 +1,93 @@
+{
+	"site-lx-01": [
+		{
+			"id": "inc-001",
+			"siteId": "site-lx-01",
+			"severity": "medium",
+			"status": "open",
+			"description": "Humidity drift above range on Zone B — agent attempted misting adjustment.",
+			"sensorSnapshot": {
+				"siteId": "site-lx-01",
+				"timestamp": "2026-05-01T08:15:00.000Z",
+				"tempC": 23.4,
+				"humidityPct": 84,
+				"ph": 6.0,
+				"waterFlowLPerMin": 6.2,
+				"lightLux": 12000
+			},
+			"agentActions": [
+				{
+					"timestamp": "2026-05-01T08:16:00.000Z",
+					"action": "Reduce misting duty cycle 10%",
+					"result": "failed"
+				},
+				{
+					"timestamp": "2026-05-01T08:17:30.000Z",
+					"action": "Notify orchestrator for cross-zone check",
+					"result": "pending"
+				}
+			],
+			"createdAt": "2026-05-01T08:15:00.000Z",
+			"updatedAt": "2026-05-01T08:17:30.000Z"
+		},
+		{
+			"id": "inc-002",
+			"siteId": "site-lx-01",
+			"severity": "low",
+			"status": "resolved",
+			"description": "Light lux briefly below threshold — schedules corrected.",
+			"sensorSnapshot": {
+				"siteId": "site-lx-01",
+				"timestamp": "2026-04-28T14:02:00.000Z",
+				"tempC": 22.1,
+				"humidityPct": 72,
+				"ph": 6.1,
+				"waterFlowLPerMin": 5.8,
+				"lightLux": 4200
+			},
+			"agentActions": [
+				{
+					"timestamp": "2026-04-28T14:03:00.000Z",
+					"action": "Extend photoperiod 45 minutes",
+					"result": "success"
+				}
+			],
+			"createdAt": "2026-04-28T14:02:00.000Z",
+			"updatedAt": "2026-04-28T14:05:00.000Z"
+		}
+	],
+	"site-lx-02": [],
+	"site-pt-01": [
+		{
+			"id": "inc-010",
+			"siteId": "site-pt-01",
+			"severity": "high",
+			"status": "escalated",
+			"description": "Water flow dropped below minimum — manual inspection requested.",
+			"sensorSnapshot": {
+				"siteId": "site-pt-01",
+				"timestamp": "2026-04-30T19:40:00.000Z",
+				"tempC": 21.0,
+				"humidityPct": 68,
+				"ph": 5.9,
+				"waterFlowLPerMin": 1.2,
+				"lightLux": 9800
+			},
+			"agentActions": [
+				{
+					"timestamp": "2026-04-30T19:41:00.000Z",
+					"action": "Open backup circulation valve",
+					"result": "failed"
+				},
+				{
+					"timestamp": "2026-04-30T19:42:00.000Z",
+					"action": "Escalate to PagerDuty",
+					"result": "success"
+				}
+			],
+			"createdAt": "2026-04-30T19:40:00.000Z",
+			"updatedAt": "2026-04-30T19:42:00.000Z",
+			"pagerdutyIncidentId": "pd-mock-10"
+		}
+	]
+}

@@ -1,0 +1,36 @@
+{
+	"lisbon": [
+		{
+			"crop": "Lettuce",
+			"demandKgPerMonth": 12000,
+			"pricePerKg": 3.4
+		},
+		{
+			"crop": "Basil",
+			"demandKgPerMonth": 1800,
+			"pricePerKg": 12.5
+		},
+		{
+			"crop": "Microgreens",
+			"demandKgPerMonth": 2400,
+			"pricePerKg": 28
+		}
+	],
+	"porto": [
+		{
+			"crop": "Lettuce",
+			"demandKgPerMonth": 7800,
+			"pricePerKg": 3.2
+		},
+		{
+			"crop": "Basil",
+			"demandKgPerMonth": 950,
+			"pricePerKg": 11.8
+		},
+		{
+			"crop": "Microgreens",
+			"demandKgPerMonth": 1600,
+			"pricePerKg": 26.5
+		}
+	]
+}
