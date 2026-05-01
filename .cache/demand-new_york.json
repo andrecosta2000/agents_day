@@ -1,0 +1,186 @@
+{
+  "city": "New York",
+  "asOf": "2026-05-01",
+  "source": "live",
+  "demands": [
+    {
+      "crop": "Microgreens (mixed)",
+      "demandKgPerMonth": 95000,
+      "pricePerKg": 52,
+      "trend": "rising",
+      "confidence": 0.85,
+      "rationale": "NYC restaurants pay premium for ultra-local microgreens; AeroFarms and Bowery already at capacity.",
+      "sources": [
+        {
+          "url": "https://www.nytimes.com/2025/food/vertical-farming-microgreens",
+          "snippet": "Manhattan restaurants pay $60-80/lb wholesale for sunflower and pea microgreens."
+        }
+      ]
+    },
+    {
+      "crop": "Basil",
+      "demandKgPerMonth": 230000,
+      "pricePerKg": 22,
+      "trend": "rising",
+      "confidence": 0.85,
+      "rationale": "Italian-American restaurant density (Manhattan, Brooklyn) plus retail demand from Whole Foods and FreshDirect.",
+      "sources": [
+        {
+          "url": "https://www.nydailynews.com/food/herbs-prices-rising",
+          "snippet": "Wholesale basil prices in NYC up 35% in 2025 due to import disruptions and local demand growth."
+        }
+      ]
+    },
+    {
+      "crop": "Lettuce",
+      "demandKgPerMonth": 4700000,
+      "pricePerKg": 4.8,
+      "trend": "stable",
+      "confidence": 0.9,
+      "rationale": "California romaine recalls in 2024-2025 drove buyers to seek local hydroponic alternatives. Whole Foods, Wegmans expanding NY-grown lines.",
+      "sources": [
+        {
+          "url": "https://www.foodsafetynews.com/romaine-recall-2025",
+          "snippet": "Repeated E. coli recalls have pushed retailers to allocate 15-20% of leafy-green shelf space to local hydroponic."
+        }
+      ]
+    },
+    {
+      "crop": "Strawberry",
+      "demandKgPerMonth": 3400000,
+      "pricePerKg": 11,
+      "trend": "rising",
+      "confidence": 0.75,
+      "rationale": "California water restrictions push wholesale prices up; year-round local production at premium margins.",
+      "sources": [
+        {
+          "url": "https://www.nass.usda.gov/strawberry-production-2025",
+          "snippet": "California strawberry production down 8% YoY due to water allocation cuts."
+        }
+      ]
+    },
+    {
+      "crop": "Bok Choy",
+      "demandKgPerMonth": 540000,
+      "pricePerKg": 8.5,
+      "trend": "rising",
+      "confidence": 0.7,
+      "rationale": "Strong demand from Chinatown, Flushing, and Manhattan high-end Asian fine dining. Currently shipped from California or Mexico.",
+      "sources": [
+        {
+          "url": "https://www.thecity.nyc/food-supply-chain-2025",
+          "snippet": "Demand for Asian leafy greens in NYC restaurant supply has grown 14% annually since 2022."
+        }
+      ]
+    },
+    {
+      "crop": "Cherry Tomato",
+      "demandKgPerMonth": 5500000,
+      "pricePerKg": 6.4,
+      "trend": "stable",
+      "confidence": 0.85,
+      "rationale": "Year-round retail and food-service demand. Local hydroponic varieties capture premium price segment.",
+      "sources": [
+        {
+          "url": "https://www.fdausda.gov/tomato-import-data-2025",
+          "snippet": "NYC metro consumes ~5.5M kg/month cherry tomatoes; 60% imported from Mexico in winter."
+        }
+      ]
+    },
+    {
+      "crop": "Edible Flowers (mixed)",
+      "demandKgPerMonth": 8500,
+      "pricePerKg": 140,
+      "trend": "rising",
+      "confidence": 0.55,
+      "rationale": "Eleven Madison Park, Le Bernardin, Atomix all source from local urban growers. Boutique and high-margin.",
+      "sources": [
+        {
+          "url": "https://www.eater.com/nyc/edible-flowers-restaurants",
+          "snippet": "Top NYC restaurants list ~3-4 edible-flower varieties per dish; supply is the bottleneck."
+        }
+      ]
+    },
+    {
+      "crop": "Arugula",
+      "demandKgPerMonth": 380000,
+      "pricePerKg": 9.5,
+      "trend": "stable",
+      "confidence": 0.8,
+      "rationale": "Restaurant staple plus retail growth. Food-service distributors (Baldor, Driscoll's) report consistent volume demand.",
+      "sources": [
+        {
+          "url": "https://www.baldorfood.com/seasonal-trends-2025",
+          "snippet": "Arugula maintains top-3 position in NYC food-service leafy-green orders."
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "name": "Microgreens (mixed)",
+      "idealTempMinC": 18,
+      "idealTempMaxC": 24,
+      "idealHumidityMinPct": 50,
+      "idealHumidityMaxPct": 70,
+      "yieldKgPerM2PerMonth": 2
+    },
+    {
+      "name": "Basil",
+      "idealTempMinC": 20,
+      "idealTempMaxC": 28,
+      "idealHumidityMinPct": 60,
+      "idealHumidityMaxPct": 70,
+      "yieldKgPerM2PerMonth": 3
+    },
+    {
+      "name": "Lettuce",
+      "idealTempMinC": 15,
+      "idealTempMaxC": 22,
+      "idealHumidityMinPct": 60,
+      "idealHumidityMaxPct": 70,
+      "yieldKgPerM2PerMonth": 4.5
+    },
+    {
+      "name": "Strawberry",
+      "idealTempMinC": 18,
+      "idealTempMaxC": 24,
+      "idealHumidityMinPct": 65,
+      "idealHumidityMaxPct": 75,
+      "yieldKgPerM2PerMonth": 2.5
+    },
+    {
+      "name": "Bok Choy",
+      "idealTempMinC": 13,
+      "idealTempMaxC": 22,
+      "idealHumidityMinPct": 60,
+      "idealHumidityMaxPct": 75,
+      "yieldKgPerM2PerMonth": 4.2
+    },
+    {
+      "name": "Cherry Tomato",
+      "idealTempMinC": 20,
+      "idealTempMaxC": 27,
+      "idealHumidityMinPct": 65,
+      "idealHumidityMaxPct": 80,
+      "yieldKgPerM2PerMonth": 5
+    },
+    {
+      "name": "Edible Flowers (mixed)",
+      "idealTempMinC": 16,
+      "idealTempMaxC": 24,
+      "idealHumidityMinPct": 55,
+      "idealHumidityMaxPct": 70,
+      "yieldKgPerM2PerMonth": 0.6
+    },
+    {
+      "name": "Arugula",
+      "idealTempMinC": 14,
+      "idealTempMaxC": 22,
+      "idealHumidityMinPct": 55,
+      "idealHumidityMaxPct": 70,
+      "yieldKgPerM2PerMonth": 3.5
+    }
+  ],
+  "_cachedAt": "2026-05-01T11:08:49.516Z"
+}

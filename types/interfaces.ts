@@ -65,10 +65,44 @@ export interface WaterSource {
   lng: number;
 }
 
+export interface DemandSource {
+  url: string;
+  snippet: string;
+}
+
 export interface Demand {
   crop: string;
   demandKgPerMonth: number;
   pricePerKg: number;
+  trend?: "rising" | "stable" | "falling";
+  confidence?: number; // 0..1
+  rationale?: string;
+  sources?: DemandSource[];
+}
+
+export interface CropProfile {
+  name: string;
+  idealTempMinC: number;
+  idealTempMaxC: number;
+  idealHumidityMinPct: number;
+  idealHumidityMaxPct: number;
+  yieldKgPerM2PerMonth: number;
+}
+
+export interface DemandResearchResult {
+  city: string;
+  asOf: string;          // ISO date string
+  source: "live" | "cache" | "fallback";
+  demands: Demand[];
+  profiles: CropProfile[]; // agronomic data for crops surfaced by research
+}
+
+export interface SuitabilityScore {
+  cropName: string;
+  score: number;         // 0..1
+  monthlyHvacCostPerM2Eur: number;
+  monthlyRevenuePerM2Eur: number;
+  reason: "ok" | "uneconomic" | "missing_climate";
 }
 
 export interface CropAllocation {
