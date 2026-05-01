@@ -21,8 +21,29 @@ export function shouldUseApiMocks(): boolean {
 	return process.env.NEXT_PUBLIC_USE_MOCKS !== "false";
 }
 
+/** Node `fetch` in RSC has no document base URL — relative `/api/...` throws ERR_INVALID_URL. */
+function resolveFetchUrl(path: string): string {
+	if (path.startsWith("http://") || path.startsWith("https://")) {
+		return path;
+	}
+	if (typeof window !== "undefined") {
+		return path;
+	}
+	const explicit =
+		process.env.NEXT_INTERNAL_API_URL?.replace(/\/$/, "") ||
+		process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+	if (explicit) {
+		return `${explicit}${path.startsWith("/") ? path : `/${path}`}`;
+	}
+	if (process.env.VERCEL_URL) {
+		return `https://${process.env.VERCEL_URL}${path.startsWith("/") ? path : `/${path}`}`;
+	}
+	const port = process.env.PORT || "3000";
+	return `http://127.0.0.1:${port}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 async function fetchJson<T>(input: string, init?: RequestInit): Promise<T> {
-	const res = await fetch(input, {
+	const res = await fetch(resolveFetchUrl(input), {
 		...init,
 		headers: { Accept: "application/json", ...init?.headers },
 	});

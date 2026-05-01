@@ -20,6 +20,9 @@
 # production
 /build
 
+# UrbanFarm agents — local incidents / queues / mock PagerDuty logs
+/.urbanfarm/
+
 # misc
 .DS_Store
 *.pem
